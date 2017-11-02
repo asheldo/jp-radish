@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
+    <script src="data-handlers.js"/>
+    
+    <script>
+    </script>
+    
+  </head>
+  <body>
+    <select id="groups" name="groups"
+	    onChange="listGroupRoots(this)" >
+      </select>
+    <select id="docs" name="docs"
+	    onChange="showRootContent(this)" >
+      </select>
+    <div>
+    <textarea id="root" name="root" cols=100 rows=20>
+    </textarea>
+    </div>
+  </body>
+  
+</html>

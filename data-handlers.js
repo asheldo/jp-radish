@@ -7,6 +7,7 @@
 let groupRoots = {};
 
 const remoteDatabase = new PouchDB(`http://localhost:5984/pokory-17102401`);
+const remoteKeywordsDb = new PouchDB(`http://localhost:5984/pie-keys-17102401`);
 				   
 remoteDatabase.info().then(function (info) {
     console.log(info);
@@ -23,7 +24,8 @@ function handleRows(results) {
     //
     groupRoots = groupsAndRoots.groupRoots;       
     fillRootGroupsSelect(groups);
-    // fillRootsSelect(results.rows);
+    fillAllRootsSelect(results.rows);
+    fillAllFirstRootsSelect(results.rows);
 }
       
 function defineGroupsFromRoots(roots) {
@@ -32,7 +34,7 @@ function defineGroupsFromRoots(roots) {
     roots.forEach( root => {
 	let doc = root.doc;
 	let id = doc._id;
-	let re = /\/(\({0,1}\w\){0,1}\w)/;
+	let re = /\/([*]{0,1}..)/u;
 	if (id == null) {
 	    console.log("no match");
 	} else {
@@ -66,12 +68,32 @@ function fillRootGroupsSelect(groups) {
     });
 }
 				   
-function fillRootsSelect(roots) {
-    let select = document.getElementById("docs");
+function fillAllRootsSelect(roots) {
+    let select = document.getElementById("allroots");
     select.options[0] = new Option("", "");     
     roots.forEach(function(root) {
-        let doc = root.doc;
-        select.options[select.options.length] = new Option(doc._id, doc._id);
+        let id = root.doc._id;
+        select.options[select.options.length] = new Option(id, id);
+    });
+}
+				   
+function fillAllFirstRootsSelect(roots) {
+    let select = document.getElementById("allfirstroots");
+    select.options[0] = new Option("", "");
+    let re = /\/([^/]{2,20})[,\/]{1}/u;
+    const all = {}
+    const keys = []
+    roots.forEach(function(root) {
+        let id = root.doc._id;
+	let match = id.match(re);
+	if (match != null && match.length > 1) {
+            // select.options[select.options.length] = new Option(match[1], id);
+	    keys[keys.length] = match[1];
+	    all[match[1]] = id;
+	}
+    });
+    keys.sort().forEach(function(key) {
+        select.options[select.options.length] = new Option(key, all[key]);
     });
 }
 				   
@@ -92,5 +114,37 @@ function showRootContent(select) {
     let doc = remoteDatabase.get(rootId).then( function(result) {
         out.innerHTML = result.content;
     });
+    return rootId;
 }
+
+function langs() {
+    const sel = document.getElementById("ielanguage");
+    const langs = ["sk","gk","lat","got","ger","ags","aisl","av"];
+    langs.forEach(function(lang) {
+        sel.options[sel.options.length] = new Option(lang, lang);
+    });
+}
+
+function saveKeyword() {
+    let root = document.getElementById("pieroot").value;
+    if (root == null || root === "") {
+	return;
+    }
+    let key = document.getElementById("iekeyword").value;
+    let keyRoot = key + "->" + root;
+    let doc = remoteKeywordsDb.get(keyRoot).then( function(result) {
+	if (result == null) {
+            // out.innerHTML = result.content;
+	    console.log(keyRoot);
+	}
+    });
+    
+    /*
+    	<select id="ielanguage"/>
+	  <input id="iekeyword" width="15"/>
+	  <input id="pieroot" width="25"/>
+	  <button onclick="saveKeyword()"/>
+ */
+}
+
 

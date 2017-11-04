@@ -1,23 +1,74 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
-    <script src="data-handlers.js"/>
+      <meta charset="utf-8">
+      <meta name='viewport' content='width=device-width, initial-scale=1'>
+      <meta name="xxxcsrf-param" content="xxxauthenticity_token" />
+      <meta name="xxxcsrf-token" content="8==" />
+
+      <link rel="stylesheet" media="screen" href="lights.css"/>
+      <link href='https://fonts.googleapis.com/css?family=Lato:400,900,400italic,700italic' rel='stylesheet'>
+
+      <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
+      <script src="data-handlers.js"/>
     
-    <script>
-    </script>
+      <script>
+      </script>
     
   </head>
-  <body>
+  <body onload="langs()">
+
+      <label for="lightswitch">Light Switch</label>
+      <input type="checkbox" id="lightswitch" />
+
+    <div class="main">
+    <table>
+      <tr>
+	<td>
+    <select id="allfirstroots" name="allfirstroots" size=30
+	    onChange="pieroot.value=showRootContent(this)" >
+      </select>
+	</td>
+	<td>
+	<table>
+	  <tr>
+	    <td>
     <select id="groups" name="groups"
 	    onChange="listGroupRoots(this)" >
-      </select>
+    </select>
     <select id="docs" name="docs"
-	    onChange="showRootContent(this)" >
-      </select>
-    <div>
-    <textarea id="root" name="root" cols=100 rows=20>
+	    onChange="pieroot.value=showRootContent(this)" >
+    </select>
+	    </td>
+	    <td>
+	    </td>
+	  </tr>
+	  <tr>
+	    <td colspan=2>
+    <textarea id="root" name="root">
     </textarea>
+	    </td>
+	  </tr>	  
+	</table>
+	</td>
+	<td>
+    <select id="allroots" name="allroots" size=30
+	    onChange="pieroot.value=showRootContent(this)" >
+      </select>
+	</td>
+      </tr>
+      <tr>
+	<td colspan=3>
+	  <select id="ielanguage"/>
+	  <input id="iekeyword" width="15"/>
+	  <input id="pieroot" width="25"/>
+	  <button onclick="saveKeyword()">save</button>
+	</td>
+      </tr>
+    </table>
+    </div>
+    
+    <div>
     </div>
   </body>
   

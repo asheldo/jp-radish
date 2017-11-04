@@ -125,20 +125,46 @@ function langs() {
     });
 }
 
+// myService.exist = function(){
+function keywordExist(key) {
+    return remoteKeywordsDb.get(key).then(function () {
+        return Promise.resolve(true);
+    }).catch(function () {
+        return Promise.resolve(false);
+    });
+};
+
+function keywordPut(lang, key, root) {
+    const langkey = lang + " : " + key;
+    const roots = {};
+    roots[root] = new Date();
+    remoteKeywordsDb.put({"_id": langkey, "type": "lang:word:roots" , "roots": roots} 
+    ).then(function (res) {
+        console.log(res);
+    }).catch(function (err) {
+	console.log(err);
+	// if (err.error === "conflict")
+	remoteKeywordsDb.get(langkey).then(function (doc) {
+	    if (doc.roots[root] == null) {
+		doc.roots[root] = new Date();
+	    }
+	    return remoteKeywordsDb.put(
+		{"_id": langkey, "_rev": doc._rev, "type": "lang:word:roots", "roots": doc.roots }
+	    );
+	}).catch(function (err) {
+	    console.log(err);
+	});
+    });
+};
+
 function saveKeyword() {
+    let lang = document.getElementById("ielanguage").value;
     let root = document.getElementById("pieroot").value;
-    if (root == null || root === "") {
+    let key = document.getElementById("iekeyword").value;
+    if (root == null || root === "" || key == null || key === "") {
 	return;
     }
-    let key = document.getElementById("iekeyword").value;
-    let keyRoot = key + "->" + root;
-    let doc = remoteKeywordsDb.get(keyRoot).then( function(result) {
-	if (result == null) {
-            // out.innerHTML = result.content;
-	    console.log(keyRoot);
-	}
-    });
-    
+    keywordPut(lang, key, root);
     /*
     	<select id="ielanguage"/>
 	  <input id="iekeyword" width="15"/>

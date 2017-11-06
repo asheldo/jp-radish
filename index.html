@@ -26,7 +26,7 @@
       <tr>
 	<td>
     <select id="allfirstroots" name="allfirstroots" size=30
-	    onChange="pieroot.value=showRootContent(this)" >
+	    onChange="pieroot.value=showUpdate(this, pieroot, roothistory)" >
       </select>
 	</td>
 	<td>
@@ -37,7 +37,7 @@
 	    onChange="listGroupRoots(this)" >
     </select>
     <select id="docs" name="docs"
-	    onChange="pieroot.value=showRootContent(this)" >
+	    onChange="pieroot.value=showUpdate(this, pieroot, roothistory)" >
     </select>
 	    </td>
 	    <td>
@@ -53,16 +53,21 @@
 	</td>
 	<td>
     <select id="allroots" name="allroots" size=30
-	    onChange="pieroot.value=showRootContent(this)" >
+	    onChange="showUpdate(this, pieroot, roothistory)" >
       </select>
 	</td>
       </tr>
       <tr>
-	<td colspan=3>
+	<td colspan=2 valign="top">
 	  <select id="ielanguage"/>
 	  <input id="iekeyword" width="15"/>
 	  <input id="pieroot" width="25"/>
+	  <input id="note" width="15"/>
 	  <button onclick="saveKeyword()">save</button>
+	</td>
+	<td colspan=1>
+	  <select id="roothistory" size="20" width="100%"
+	    onChange="pieroot.value=showRootContent(this, pieroot.value)" >
 	</td>
       </tr>
     </table>

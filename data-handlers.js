@@ -107,14 +107,45 @@ function listGroupRoots(select) {
         rootsOut.options[rootsOut.options.length] = new Option(root, root);
     });
 }
-				   
-function showRootContent(select) {
-    let rootId = select.options[select.selectedIndex].value;
-    let out = document.getElementById("root");
-    let doc = remoteDatabase.get(rootId).then( function(result) {
-        out.innerHTML = result.content;
-    });
-    return rootId;
+
+/**
+ * entry point
+ */
+function showUpdate(select, pieroot, roothistory) {
+    const oldValue = pieroot.value;
+    pieroot.value = showRootContent(select, oldValue);
+    return saveHistory(select, oldValue, roothistory);
+}
+
+function saveHistory(select, newroot, roothistory) {
+    // save history
+    const selOpt = select.options[select.selectedIndex];
+    if (selOpt.text !== "") {
+	const hopts = roothistory.options;
+	const len = hopts.length;
+	if (len==0 || hopts[len-1].text!==selOpt.text) {
+	    hopts[len] = new Option(selOpt.text, selOpt.value);
+	    console.log(hopts[len].value);
+	}
+    }
+    return newroot;
+}
+
+/**
+ * From any list, pick a Root to show in detail
+ */
+function showRootContent(select,oldRoot) {
+    let opt = select.options[select.selectedIndex];
+    let rootId = opt.value;
+    if (rootId !== "") {
+	console.log(opt.text + " -> " + opt.value + " = " + rootId);
+	let out = document.getElementById("root");
+	let doc = remoteDatabase.get(rootId).then( function(result) {
+            out.innerHTML = result.content;
+	});
+	return rootId;
+    }
+    return oldRoot;
 }
 
 function langs() {
@@ -134,19 +165,23 @@ function keywordExist(key) {
     });
 };
 
-function keywordPut(lang, key, root) {
-    const langkey = lang + " : " + key;
+function keywordPut(lang, key, root, note) {
+    const langkey = lang + " : " + key;    
+    const info = {}
+    info[note] = new Date();
     const roots = {};
-    roots[root] = new Date();
-    remoteKeywordsDb.put({"_id": langkey, "type": "lang:word:roots" , "roots": roots} 
-    ).then(function (res) {
+    roots[root] = info;
+    const doc = {"_id": langkey, "type": "lang:word:roots", "roots": roots};
+    remoteKeywordsDb.put(doc).then(function (res) {
         console.log(res);
     }).catch(function (err) {
 	console.log(err);
 	// if (err.error === "conflict")
 	remoteKeywordsDb.get(langkey).then(function (doc) {
 	    if (doc.roots[root] == null) {
-		doc.roots[root] = new Date();
+		doc.roots[root] = info;
+	    } else {
+		doc.roots[root][note] = info[note];
 	    }
 	    return remoteKeywordsDb.put(
 		{"_id": langkey, "_rev": doc._rev, "type": "lang:word:roots", "roots": doc.roots }
@@ -161,10 +196,11 @@ function saveKeyword() {
     let lang = document.getElementById("ielanguage").value;
     let root = document.getElementById("pieroot").value;
     let key = document.getElementById("iekeyword").value;
+    let note = document.getElementById("note").value;
     if (root == null || root === "" || key == null || key === "") {
 	return;
     }
-    keywordPut(lang, key, root);
+    keywordPut(lang, key, root, note);
     /*
     	<select id="ielanguage"/>
 	  <input id="iekeyword" width="15"/>

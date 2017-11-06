@@ -33,6 +33,11 @@ html, body {
     background-color: #eee;
 }
  
+.main input {
+    color: #111;
+    background-color: #eee;
+}
+ 
 
 /*Switched Off*/
 input#lightswitch:checked + .main {
@@ -45,6 +50,11 @@ input#lightswitch:checked + .main textarea {
 }
 
 input#lightswitch:checked + .main select {
+    color: #ddd;
+    background-color: #111
+}
+ 
+input#lightswitch:checked + .main input {
     color: #ddd;
     background-color: #111
 }

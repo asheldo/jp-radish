@@ -71,7 +71,8 @@ function fillAllRootsSelect(roots) {
     select.options[0] = new Option("", "");     
     roots.forEach(function(root) {
         let id = root.doc._id;
-        select.options[select.options.length] = new Option(id, id);
+	let name = id.length <= 24 ? id : id.substring(0, 24);
+        select.options[select.options.length] = new Option(name, id);
     });
 }
 				   
@@ -130,30 +131,55 @@ function saveHistory(select, newroot, roothistory) {
 }
 
 function parseContent(root) {
+    const content = "<pre>" + parseContents(root, 0) + "</pre>";
+    // console.log(root + "\n" + content);
+    return content;
+}
+
+function langs() {
+    const sel = document.getElementById("ielanguage");
+    const langs = [["Old Indian","sk"],["gr","gk"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["ahd","ahd"]];
+    langs.forEach(function(lang) {
+        sel.options[sel.options.length] = new Option(lang, lang);
+    });
+}
+
+function parseContents(root, level) {
     var content = "";
     var q = '"';
-    let re = /(([Gg]r)|(ags)|(germ)|(aisl)|(cymr)|(got)|(av)|([Ll]at)|(air))\.\s([^\s]*)\s/;
+    const langs = 13;
+    let re = /(([Gg]r)|([Ss]chwed)|(ahd)|([Ee]ngl)|(mengl)|(ags)|(germ)|(aisl)|(cymr)|(got)|(av)|([Ll]at)|(air))\.\s((?!and)[^\s]*)\s/;
     var matchs = root.match(re);
-    console.log(matchs);
+    // console.log(matchs);
     if (matchs == null) {
-	content = "<pre>" + root + "</pre>";
+	return root;
     } else {
-	console.log(matchs[0]);
+	// console.log(matchs[0]);
 	const lang = q + matchs[1].toLowerCase() + q
+	const word = matchs[langs + 2];
 	const first = matchs.index + 2 + matchs[1].length;
-	const second = first + 1 + matchs[11].length; // 9 lang + 1
-	content = "<pre>" + root.substring(0, first) + "</pre>";
-	const link = "<a href='javascript:void(0)' onclick='linkLanguage(${lang},this)'>";
-	content += link + matchs[11] + "</a>" + "<pre>";
-	content += root.substring(second) + "</pre>";
-	console.log(matchs[1] + " -> " + link);
+	const second = first + 1 + word.length; // 9 lang + 2
+	// content = "<pre>";
+	content += root.substring(0, first) + "</pre>";
+	const link = "<a href='javascript:void(0)' onclick='linkLanguage("+lang+",this)'>";
+	content += link + word + "</a>" + "<pre>";
+	// recurse a few times
+	const next = root.substring(second);
+	if (level < 16) {
+	    content += parseContents(next, level+1);
+	} else {
+	    content += next;
+	}
+	// content += "</pre>";
+	console.log("" + level + ": " + matchs[1] + " -> " + link);
+	return content;
     }
-    return content;
 }
 
 function linkLanguage(lang, link) {
     var iekeyword = document.getElementById("iekeyword");
     iekeyword.value = link.innerHTML;
+    var ielang = document.getElementById("ielanguage");
     ielang.value = lang;
 }
 
@@ -175,14 +201,6 @@ function showRootContent(select, oldRoot) {
 	return rootId;
     }
     return oldRoot;
-}
-
-function langs() {
-    const sel = document.getElementById("ielanguage");
-    const langs = ["sk","gk","lat","got","germ","ags","aisl","av"];
-    langs.forEach(function(lang) {
-        sel.options[sel.options.length] = new Option(lang, lang);
-    });
 }
 
 // myService.exist = function(){

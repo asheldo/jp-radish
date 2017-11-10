@@ -1,24 +1,21 @@
-/*
- * Fetch into memory the entire index of the couchdb pokorny roots.
- * Then break down into two-letter groups of roots.
- * TODO: Put the non-groupable somewhere? 
- */
-
-let groupRoots = {};
-
-const host = "192.168.0.6"; //  : "localhost";
+const host = "192.168.0.6";
+//  : "localhost";
 const remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
 const remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
-				   
-remoteDatabase.info().then(function (info) {
-    console.log(info);
-});
 
-remoteDatabase.allDocs({
+let groupRoots = initPage();
+				     
+function initPage() {
+  remoteDatabase.info().then(function (info) {
+    console.log(info);
+  });
+  remoteDatabase.allDocs({
     include_docs: true,
     attachments: true
-}).then(handleRows).catch(err => console.log(err));
-
+  }).then(handleRows).catch(err => console.log(err));
+  return {};
+}
+				     
 function handleRows(results) {
     let groupsAndRoots = defineGroupsFromRoots(results.rows);
     let groups = groupsAndRoots.groups;
@@ -134,25 +131,30 @@ function saveHistory(select, newroot, roothistory) {
 
 function parseContent(root) {
     var content = "";
-    var matchs;
-    let re = /([Gg]r\.)\s([^\s]*)\s/;
-    matchs = root.match(re);
+    var q = '"';
+    let re = /(([Gg]r)|(ags)|(germ)|(aisl)|(cymr)|(got)|(av)|([Ll]at)|(air))\.\s([^\s]*)\s/;
+    var matchs = root.match(re);
     console.log(matchs);
     if (matchs == null) {
 	content = "<pre>" + root + "</pre>";
     } else {
-	content = "<pre>" + root.substring(0, matchs.index+1+matchs[1].length) + "</pre>";
-	content += "<a href='javascript:void(0)' onclick='greek(this)'>";
-	content += matchs[2] + "</a>" + "<pre>";
-	content += root.substring(matchs.index+2+matchs[1].length+matchs[2].length) + "</pre>";
-	console.log(matchs[1]);
+	console.log(matchs[0]);
+	const lang = q + matchs[1].toLowerCase() + q
+	const first = matchs.index + 2 + matchs[1].length;
+	const second = first + 1 + matchs[11].length; // 9 lang + 1
+	content = "<pre>" + root.substring(0, first) + "</pre>";
+	const link = "<a href='javascript:void(0)' onclick='linkLanguage(${lang},this)'>";
+	content += link + matchs[11] + "</a>" + "<pre>";
+	content += root.substring(second) + "</pre>";
+	console.log(matchs[1] + " -> " + link);
     }
     return content;
 }
 
-function greek(link) {
+function linkLanguage(lang, link) {
     var iekeyword = document.getElementById("iekeyword");
     iekeyword.value = link.innerHTML;
+    ielang.value = lang;
 }
 
 /**
@@ -177,7 +179,7 @@ function showRootContent(select, oldRoot) {
 
 function langs() {
     const sel = document.getElementById("ielanguage");
-    const langs = ["sk","gk","lat","got","ger","ags","aisl","av"];
+    const langs = ["sk","gk","lat","got","germ","ags","aisl","av"];
     langs.forEach(function(lang) {
         sel.options[sel.options.length] = new Option(lang, lang);
     });

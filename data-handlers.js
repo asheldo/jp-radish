@@ -6,8 +6,9 @@
 
 let groupRoots = {};
 
-const remoteDatabase = new PouchDB(`http://localhost:5984/pokory-17102401`);
-const remoteKeywordsDb = new PouchDB(`http://localhost:5984/pie-keys-17102401`);
+const host = "192.168.0.6"; //  : "localhost";
+const remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
+const remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
 				   
 remoteDatabase.info().then(function (info) {
     console.log(info);
@@ -134,14 +135,16 @@ function saveHistory(select, newroot, roothistory) {
 /**
  * From any list, pick a Root to show in detail
  */
-function showRootContent(select,oldRoot) {
+function showRootContent(select, oldRoot) {
     let opt = select.options[select.selectedIndex];
     let rootId = opt.value;
     if (rootId !== "") {
 	console.log(opt.text + " -> " + opt.value + " = " + rootId);
 	let out = document.getElementById("root");
+	let out2 = document.getElementById("root-table-scroll");
 	let doc = remoteDatabase.get(rootId).then( function(result) {
             out.innerHTML = result.content;
+	    out2.innerHTML = result.content;
 	});
 	return rootId;
     }

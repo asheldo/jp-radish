@@ -20,12 +20,21 @@ html, body {
     padding-right:200px
 }
 
+#root-table-scroll {
+    #height:150px;
+    font-size:1.05rem;
+    width:44rem;
+    height:480px;
+    overflow:scroll;  
+    margin-top:2px;
+}
+
 .main textarea {
     color: #111;
     background-color: #eee;
     font-size:1rem;
     width:45rem;
-    height:540px;
+    #height:540px;
 }
 
 .main select {
@@ -44,6 +53,11 @@ input#lightswitch:checked + .main {
   background: #222;
 }
  
+input#lightswitch:checked + .main div {
+    color: #ddd;
+    background-color: #111
+}
+
 input#lightswitch:checked + .main textarea {
     color: #ddd;
     background-color: #111

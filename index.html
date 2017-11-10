@@ -26,7 +26,7 @@
       <tr>
 	<td>
     <select id="allfirstroots" name="allfirstroots" size=30
-	    onChange="pieroot.value=showUpdate(this, pieroot, roothistory)" >
+	    onChange="showUpdate(this, pieroot, roothistory)" >
       </select>
 	</td>
 	<td>
@@ -37,7 +37,7 @@
 	    onChange="listGroupRoots(this)" >
     </select>
     <select id="docs" name="docs"
-	    onChange="pieroot.value=showUpdate(this, pieroot, roothistory)" >
+	    onChange="showUpdate(this, pieroot, roothistory)" >
     </select>
 	    </td>
 	    <td>
@@ -45,7 +45,7 @@
 	  </tr>
 	  <tr>
 	    <td colspan=2>
-	      <pre><div id="root-table-scroll">Root</div></pre>
+	      <div id="root-table-scroll">Root</div>
 	      <textarea id="root" name="root" rows="1">Root</textarea>
 	    </td>
 	  </tr>

@@ -132,6 +132,29 @@ function saveHistory(select, newroot, roothistory) {
     return newroot;
 }
 
+function parseContent(root) {
+    var content = "";
+    var matchs;
+    let re = /([Gg]r\.)\s([^\s]*)\s/;
+    matchs = root.match(re);
+    console.log(matchs);
+    if (matchs == null) {
+	content = "<pre>" + root + "</pre>";
+    } else {
+	content = "<pre>" + root.substring(0, matchs.index+1+matchs[1].length) + "</pre>";
+	content += "<a href='javascript:void(0)' onclick='greek(this)'>";
+	content += matchs[2] + "</a>" + "<pre>";
+	content += root.substring(matchs.index+2+matchs[1].length+matchs[2].length) + "</pre>";
+	console.log(matchs[1]);
+    }
+    return content;
+}
+
+function greek(link) {
+    var iekeyword = document.getElementById("iekeyword");
+    iekeyword.value = link.innerHTML;
+}
+
 /**
  * From any list, pick a Root to show in detail
  */
@@ -139,12 +162,13 @@ function showRootContent(select, oldRoot) {
     let opt = select.options[select.selectedIndex];
     let rootId = opt.value;
     if (rootId !== "") {
-	console.log(opt.text + " -> " + opt.value + " = " + rootId);
+	// console.log(opt.text + " -> " + opt.value + " = " + rootId);
 	let out = document.getElementById("root");
-	let out2 = document.getElementById("root-table-scroll");
+	let outParsed = document.getElementById("root-table-scroll");
 	let doc = remoteDatabase.get(rootId).then( function(result) {
+	    const content = parseContent(result.content);
             out.innerHTML = result.content;
-	    out2.innerHTML = result.content;
+	    outParsed.innerHTML = content;
 	});
 	return rootId;
     }

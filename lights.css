@@ -58,6 +58,11 @@ input#lightswitch:checked + .main div {
     background-color: #111
 }
 
+input#lightswitch:checked + .main a {
+    color: #ddd;
+    background-color: #111
+}
+
 input#lightswitch:checked + .main textarea {
     color: #ddd;
     background-color: #111

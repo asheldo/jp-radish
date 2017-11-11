@@ -179,7 +179,8 @@ function linkLanguage(lang, link) {
     var ielang = document.getElementById("ielanguage");
     console.log(ielang.value + "->" + lang);
     ielang.value = lang;
-    return saveHistory(lastSelect.text, lastSelect.value, roothistory);
+    console.log("182: " + lastSelect.selectedIndex + " " + lastSelect.value);
+    return saveHistory(lastSelect.options[lastSelect.selectedIndex].text, lastSelect.value, roothistory);
 }
 
 /**

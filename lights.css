@@ -52,7 +52,21 @@ html, body {
     color: #111;
     background-color: #eee;
 }
- 
+
+.cell-memo {
+    vertical-align: top;
+}
+
+.main button {
+  display: block;
+  height: 25px;
+  width: 100px;
+  background: #eee;
+  text-align: center;
+  font: 14px/25px Helvetica, Arial, sans-serif;
+  margin: 0px 0;
+  #  position: fixed;
+}
 
 /*Switched Off*/
 input#lightswitch:checked + .main {

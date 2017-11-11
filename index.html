@@ -25,7 +25,7 @@
     <table>
       <tr>
 	<td>
-    <select id="allfirstroots" name="allfirstroots" size=30
+    <select id="allfirstroots" name="allfirstroots" size=20
 	    onChange="showUpdate(this, pieroot, roothistory)" >
       </select>
 	</td>
@@ -59,15 +59,34 @@
       </tr>
       <tr>
 	<td colspan=2 valign="top">
+	  <form>
 	  <select id="ielanguage"/>
-	  <input id="iekeyword" width="15"/>
+	  <input id="iekeyword" width="15" value="keyword"/>
 	  <input id="pieroot" width="25"/>
 	  <input id="note" width="15"/>
-	  <button onclick="saveKeyword()">save</button>
+	  <button id="save" onclick="saveKeyword(); return false;"> save </button>
+	  </form>
 	</td>
-	<td colspan=1>
+	<td colspan=1 class="cell-memo">
+	  <form>
+	    <table>
+	      <tr class="cell-memo">
+		<td>
 	  <select id="roothistory" size="20" width="100%"
-	    onChange="pieroot.value=showRootContent(this, pieroot.value)" >
+		  onChange="pieroot.value=showRootContent(this, pieroot.value)" />
+		</td>
+		<td>
+	  <input id="session" value="session"/>
+	  <script>
+	    var session = "" + new Date().toISOString().substring(0,16) + "-session";
+	    document.getElementById("session").value = session;
+	  </script>
+	  <div/>
+	  <button id="memo" onclick="saveMemoRoots(); return false;"> memo </button>
+		</td>
+	      </tr>
+	    </table>
+	  </form>
 	</td>
       </tr>
     </table>

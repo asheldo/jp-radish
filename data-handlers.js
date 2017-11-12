@@ -127,7 +127,7 @@ const langsMap = {};
 languages.forEach(function(lang) {
     langsMap[lang[1]] = lang[0];
 });
-console.log(langsMap);				   
+// console.log(langsMap);				   
 function langs() {
     const sel = document.getElementById("ielanguage");
     languages.forEach(function(lang) {
@@ -146,16 +146,13 @@ function parseContents(root, level) {
     if (matchs == null) {
 	return root;
     } else {
-	console.log(matchs[0]);
 	const lang = q + langsMap[matchs[1].replace(".","").toLowerCase()] + q
-	
 	const word = matchs[langs + 2];
 	const first = matchs.index + 1 + matchs[1].length;
 	const second = first + 1 + word.length; // 9 lang + 2
-	// content = "<pre>";
 	content += root.substring(0, first) + "</pre>";
 	const link = "<a href='javascript:void(0)' onclick='linkLanguage("+lang+",this)'>";
-	console.log(link);
+	// console.log(link);
 	content += link + word + "</a>" + "<pre>";
 	// recurse a few times
 	const next = root.substring(second);
@@ -164,7 +161,6 @@ function parseContents(root, level) {
 	} else {
 	    content += next;
 	}
-	// content += "</pre>";
 	// console.log("" + level + ": " + matchs[1] + " -> " + link);
 	return content;
     }
@@ -177,10 +173,10 @@ function linkLanguage(lang, link) {
     iekeyword.scrollIntoView(false);
     iekeyword.value = link.innerHTML;
     var ielang = document.getElementById("ielanguage");
-    console.log(ielang.value + "->" + lang);
+    // console.log(ielang.value + "->" + lang);
     ielang.value = lang;
-    console.log("182: " + lastSelect.selectedIndex + " " + lastSelect.value);
-    return saveHistory(lastSelect.options[lastSelect.selectedIndex].text, lastSelect.value, roothistory);
+    return saveHistory(lastSelect.options[lastSelect.selectedIndex].text,
+		       lastSelect.value, roothistory);
 }
 
 /**
@@ -241,20 +237,26 @@ function keywordPut(lang, key, root, note) {
 };
 				   
 function saveMemoRoots() {
-    const session = document.getElementById("session");
-    const roothistory = document.getElementById("roothistory");
-    const roots = roothistory.options;
+    const session = document.getElementById("session").value;
+    const history = document.getElementById("roothistory").options;
+    const roots = {};
+    for (var i = 0; i < history.length; ++i) {
+	var opt = history[i];
+	roots[roots.length] = [opt.text, opt.value];
+    };
     const memo = {"_id": session, "type": "lang:word:roots", "roots": roots};
+    // console.log("249: " + memo);
     remoteMemoRootsDb.put(memo).then(function (res) {
         console.log(res);
     }).catch(function (err) {
 	console.log(err);
 	// if (err.error === "conflict")
-	remoteKeywordsDb.get(session).then(function (doc) {
+	remoteMemoRootsDb.get(session).then(function (doc) {
 	    memo._rev = doc._rev;
+	    console.log(memo);
 	    return remoteMemoRootsDb.put(memo);
 	}).catch(function (err) {
-	    console.log(err);
+	    console.log("262: " + err);
 	});
     });
 

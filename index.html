@@ -78,7 +78,7 @@
 		<td>
 	  <input id="session" value="session"/>
 	  <script>
-	    var session = "" + new Date().toISOString().substring(0,16) + "-session";
+	    var session = "" + new Date().toISOString() + "-session";
 	    document.getElementById("session").value = session;
 	  </script>
 	  <div/>

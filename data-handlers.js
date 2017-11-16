@@ -22,10 +22,25 @@ function handleRows(results) {
     //
     groupRoots = groupsAndRoots.groupRoots;       
     fillRootGroupsSelect(groups);
-    fillAllRootsSelect(results.rows);
-    fillAllFirstRootsSelect(results.rows);
+    const map = mapRoots(results.rows);
+    fillAllRootsSelect(map);
+    fillAllFirstRootsSelect(map);
 }
-      
+				      
+function mapRoots(roots) {
+    let map = new Map();
+    roots.forEach(function(root) {
+	let pageStart = 10000 + parseInt(root.doc.pageStart);
+	while (map.get(pageStart)) {
+	    pageStart += 0.01;
+	}
+	let id = root.doc._id;
+        map.set(pageStart, id);
+    });
+    let mapAsc = new Map([...map.entries()].sort());
+    return mapAsc;
+}
+				      
 function defineGroupsFromRoots(roots) {
     let groups = [];
     let groupRoots = {}
@@ -66,34 +81,26 @@ function fillRootGroupsSelect(groups) {
     });
 }
 				   
-function fillAllRootsSelect(roots) {
+function fillAllRootsSelect(map) {
     let select = document.getElementById("allroots");
-    select.options[0] = new Option("", "");     
-    roots.forEach(function(root) {
-        let id = root.doc._id;
+    select.options[0] = new Option("", "");
+    for (var [pageStart, id] of map.entries()) {
 	let name = id.length <= 24 ? id : id.substring(0, 24);
-        select.options[select.options.length] = new Option(name, id);
-    });
+	select.options[select.options.length] = new Option(name, id);
+    };
 }
 				   
-function fillAllFirstRootsSelect(roots) {
+function fillAllFirstRootsSelect(map) {
     let select = document.getElementById("allfirstroots");
     select.options[0] = new Option("", "");
     let re = /\/([^/]{2,20})[,\/]{1}/u;
-    const all = {}
-    const keys = []
-    roots.forEach(function(root) {
-        let id = root.doc._id;
-	let match = id.match(re);
+    for (var [pageStart, id] of map.entries()) {
+       	let match = id.match(re);
 	if (match != null && match.length > 1) {
-            // select.options[select.options.length] = new Option(match[1], id);
-	    keys[keys.length] = match[1];
-	    all[match[1]] = id;
-	}
-    });
-    keys.sort().forEach(function(key) {
-        select.options[select.options.length] = new Option(key, all[key]);
-    });
+            select.options[select.options.length]
+		= new Option(match[1], id);
+       	}
+    };
 }
 				   
 function listGroupRoots(select) {

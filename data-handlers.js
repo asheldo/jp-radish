@@ -1,3 +1,4 @@
+
 const host = "192.168.0.6";
 //  : "localhost";
 const remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
@@ -129,16 +130,23 @@ function parseContent(root) {
     return content;
 }
 				   
-				   const languages = [["sk","old indian"],["gk","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["ahd","ahd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"]];				   
+const languages
+      = [["sk","old indian"],["gk","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven-ill","ven.-ill"],["ahd","ahd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"]];				   
 const langsMap = {};
 languages.forEach(function(lang) {
     langsMap[lang[1]] = lang[0];
 });
-// console.log(langsMap);				   
+				   // console.log(langsMap);
+				   
 function langs() {
     const sel = document.getElementById("ielanguage");
+    const selKeys = document.getElementById("keyword-ielanguage");
+    sel.options.length = selKeys.options.length = 0;
+    selKeys.options[0] = new Option("","");
     languages.forEach(function(lang) {
         sel.options[sel.options.length]
+	    = new Option(lang[1], lang[0]);
+        selKeys.options[sel.options.length]
 	    = new Option(lang[1], lang[0]);
     });
 }
@@ -146,8 +154,8 @@ function langs() {
 function parseContents(root, level) {
     var content = "";
     var q = '"';
-    const langs = 14;
-    let re = /((Old Indian)|([Gg]r\.)|(schwed\.)|(ahd\.)|([Ee]ngl\.)|(mengl\.)|(ags\.)|([Gg]erm\.)|(air\.)|([Cc]ymr\.)|(mcymr\.)|([Gg]ot\.)|(av\.)|([Ll]at\.))\s((?!and)[^\s]*)\s/;
+    const langs = 19;
+    let re = /(([Hh]es\.)|(Old Indian)|([Gg]r\.)|(schwed\.)|(ahd\.)|([Ee]ngl\.)|(mengl\.)|(ags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|(mcymr\.)|([Gg]ot\.)|(av\.)|([Aa]vest\.)|(ven\.-ill\.)|([Ll]at\.))\s((?!and)[^\s]*)\.*\s()/;
     var matchs = root.match(re);
     // console.log(matchs);
     if (matchs == null) {
@@ -163,7 +171,7 @@ function parseContents(root, level) {
 	content += link + word + "</a>" + "<pre>";
 	// recurse a few times
 	const next = root.substring(second);
-	if (level < 16) {
+	if (level < 128) {
 	    content += parseContents(next, level+1);
 	} else {
 	    content += next;
@@ -195,11 +203,9 @@ function showRootContent(select, oldRoot) {
     let rootId = opt.value;
     if (rootId !== "") {
 	// console.log(opt.text + " -> " + opt.value + " = " + rootId);
-	let out = document.getElementById("root");
 	let outParsed = document.getElementById("root-table-scroll");
 	let doc = remoteDatabase.get(rootId).then( function(result) {
 	    const content = parseContent(result.content);
-            out.innerHTML = result.content;
 	    outParsed.innerHTML = content;
 	});
 	return rootId;
@@ -207,7 +213,56 @@ function showRootContent(select, oldRoot) {
     return oldRoot;
 }
 
-// myService.exist = function(){
+				   // myService.exist = function(){
+/**
+ * Add keyword to keys db
+ */				   
+function saveKeyword() {
+    let langEl = document.getElementById("ielanguage");
+    let lang = langEl.options[langEl.selectedIndex].text;
+    console.log(lang);
+    let root = document.getElementById("pieroot").value;
+    let key = document.getElementById("iekeyword").value;
+    let note = document.getElementById("note").value;
+    if (root == null || root === "" || key == null || key === "") {
+	return;
+    }
+    keywordPut(lang, key, root, note);
+}
+
+function showKeywords(select) {
+    let scrollView = document.getElementById("keyword-table-scroll");
+    let opt = select.options[select.selectedIndex];
+    let langId = opt.value;
+    if (langId !== "") {
+	console.log(opt.text + " -> " + opt.value + " = " + langId);
+	// let outParsed = document.getElementById("root-table-scroll");
+	remoteKeywordsDb.query('ielang/ielang-words-root-and-related-meanings'
+			       , { "key":langId }
+			      )
+	    .then( result => {
+		console.log(result);
+		var values = "";
+		var vs = [];
+		result.rows.forEach( row => {
+		    var value = "<p id='keyword'>" + row.value[0] + "<br/>";
+		    var info = row.value[1];
+		    var key = "";
+		    Object.keys(info).forEach(k => {
+			key = k;
+			value += key + "<br/>" + Object.keys(info[key]);
+		    });
+		    value += "</p><br/>";
+		    vs[vs.length] = [key, value];
+		});
+		vs.sort().forEach( v => {
+		    values += v[1];
+		});
+		scrollView.innerHTML = values;
+	    });
+    }
+}
+				   
 function keywordExist(key) {
     return remoteKeywordsDb.get(key).then(function () {
         return Promise.resolve(true);
@@ -242,11 +297,43 @@ function keywordPut(lang, key, root, note) {
 	});
     });
 };
-				   
+
+/**
+ * Retrieve if saved this session before
+ */
+function loadMemoRoots() {
+    const session = document.getElementById("session").value;
+    if (session === "") {
+	return;
+    }
+    const history = document.getElementById("roothistory").options;
+    remoteMemoRootsDb.get(session).then( session => {
+	if (session == null || session.type !== "lang:word:roots") {
+	    alert("Not updating with nothing");
+	} else if (history.length > session.roots.length) {
+	    console.log(session.roots);
+	    alert("Not updating, count difference");
+	} else {
+	    console.log(session.roots);
+	    history.length = 0;
+	    for (var i = 0; i < session.roots.length; ++i) {
+		var root = session.roots[i];
+		console.log(root);
+		history[history.length] = new Option(root[0], root[1]);
+	    };	    
+	}
+    }).catch(function (err) {
+	console.log(err);
+    }); 
+}
+				   				   
 function saveMemoRoots() {
     const session = document.getElementById("session").value;
+    if (session === "") {
+	history.length = 0;
+    }
     const history = document.getElementById("roothistory").options;
-    const roots = {};
+    const roots = [];
     for (var i = 0; i < history.length; ++i) {
 	var opt = history[i];
 	roots[roots.length] = [opt.text, opt.value];
@@ -266,9 +353,11 @@ function saveMemoRoots() {
 	    console.log("262: " + err);
 	});
     });
-
 }
 
+/**
+ * Add one to list
+ */				   
 function saveHistory(text, value, roothistory) {
     // save history
     // const selOpt = select.options[select.selectedIndex];
@@ -281,22 +370,5 @@ function saveHistory(text, value, roothistory) {
 	}
     }
 }
-				   
-function saveKeyword() {
-    let langEl = document.getElementById("ielanguage");
-    let lang = langEl.options[langEl.selectedIndex].text;
-    console.log(lang);
-    let root = document.getElementById("pieroot").value;
-    let key = document.getElementById("iekeyword").value;
-    let note = document.getElementById("note").value;
-    if (root == null || root === "" || key == null || key === "") {
-	return;
-    }
-    keywordPut(lang, key, root, note);
-}
-    /*
-    	<select id="ielanguage"/>
-	  <input id="iekeyword" width="15"/>
-	  <input id="pieroot" width="25"/>
-	  <button onclick="saveKeyword()"/>
- */
+
+/** END **/

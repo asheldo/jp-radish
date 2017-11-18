@@ -20,10 +20,25 @@ html, body {
     padding-right:200px
 }
 
+.main p#keyword {
+    color: #000;
+    font-size:.9rem;
+    padding-right:0px
+}
+
 #root-table-scroll {
     #height:150px;
     font-size:1rem;
-    width:45rem;
+    width:40rem;
+    height:480px;
+    overflow:scroll;  
+    margin-top:2px;
+}
+
+#keyword-table-scroll {
+    #height:150px;
+    font-size:.8rem;
+    width:10rem;
     height:480px;
     overflow:scroll;  
     margin-top:2px;
@@ -58,7 +73,7 @@ html, body {
 }
 
 .main button {
-  display: block;
+    #  display: block;
   height: 25px;
   width: 100px;
   background: #eee;

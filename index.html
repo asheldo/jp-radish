@@ -9,14 +9,15 @@
       <link rel="stylesheet" media="screen" href="lights.css"/>
       <link href='https://fonts.googleapis.com/css?family=Lato:400,900,400italic,700italic' rel='stylesheet'>
 
-      <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
-      <script src="data-handlers.js"/>
-    
-      <script>
-      </script>
+    <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
+    <script src="data-handlers.js"/>
+
+    <script>
+    </script>
     
   </head>
-  <body onload="langs()">
+  
+  <body onload="initPage();">
 
       <label for="lightswitch">Light Switch</label>
       <input type="checkbox" id="lightswitch" />
@@ -25,14 +26,6 @@
     <table>
       <tr>
 	<!-- left -->
-	<td>
-	  <div>
-    <select id="allfirstroots" name="allfirstroots" size=22
-	    onChange="showUpdate(this, pieroot, roothistory)" >
-    </select>
-	  </div>
-	</td>
-	<!-- center -->
 	<td>
 	  <table>
 	    <!-- top -->
@@ -49,7 +42,7 @@
 	      </td>
 	      <td colspan=1>
 		<div>
-		  <select id="keyword-ielanguage"
+		  <select id="ielanguageKeyword"
 			  onchange="showKeywords(this)"/>
 		</div>
 	      </td>
@@ -67,9 +60,16 @@
 	</td>
 	<!-- right -->
 	<td>
-	  <select id="allroots" name="allroots" size=35
+	  <div>
+    <select id="allfirstroots" name="allfirstroots" size=15
+	    onChange="showUpdate(this, pieroot, roothistory)" >
+    </select>
+	  </div>
+	  <div>
+	  <select id="allroots" name="allroots" size=15
 	    onChange="showUpdate(this, pieroot, roothistory)" >
 	  </select>
+	  </div>
 	</td>
       </tr>
       <!-- bottom -->
@@ -77,7 +77,7 @@
 	<td colspan=2 valign="top">
 	  <table>
 	    <tr>
-	      <td>
+	      <td class="cell-memo">
 		<div>
 	  <form>
 	  <select id="ielanguage"/>
@@ -113,6 +113,12 @@
 	      </td>
 	      <td class="cell-memo">
 	      </td>
+	      <td class="cell-memo">
+        <div id="sync-wrapper">
+          <div id="sync-success">Currently syncing</div>
+          <div id="sync-error">There was a problem syncing</div>
+	</div>
+	      </td>
 	    </tr>
 	  </table>	  
 	</td>
@@ -125,6 +131,9 @@
     
     <div>
     </div>
+    
+    
+
   </body>
   
 </html>

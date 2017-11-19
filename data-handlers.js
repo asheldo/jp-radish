@@ -1,45 +1,118 @@
 
 const host = "192.168.0.6";
 //  : "localhost";
-const remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
-const remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
-const remoteMemoRootsDb = new PouchDB(`http://${host}:5984/pie-memoroots-17102401`);
-let groupRoots = initPage();
-				     
-function initPage() {
-  remoteDatabase.info().then(function (info) {
-    console.log(info);
-  });
-  remoteDatabase.allDocs({
-    include_docs: true,
-    attachments: true
-  }).then(handleRows).catch(err => console.log(err));
-  return {};
+const offline = true;
+var groupRoots;
+var map;
+
+var nameDatabase = 'pokory-17102401',
+    nameKeywordsDb = 'pie-keys-17102401',
+    nameMemoRootsDb = 'pie-memoroots-17102401';
+var uriDatabases = `http://${host}:5984/`;
+var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
+
+console.log(uriDatabases + nameDatabase);
+
+if (!offline) {
+    remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
+    remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
+    remoteMemoRootsDb = new PouchDB(`http://${host}:5984/pie-memoroots-17102401`);
+				      
+ /*   
+    remoteDatabase = new PouchDB(`http://${host}:5984/${nameDatabase}`);
+    remoteKeywordsDb = new PouchDB(`http://${host}:5984/${nameKeywordsDb}`);
+    remoteMemoRootsDb = new PouchDB(`http://${host}:5984/${nameMemoRootsDb}`);
+ */
+} else {
+    remoteDatabase = new PouchDB(`${nameDatabase}`);
+    remoteKeywordsDb = new PouchDB(`${nameKeywordsDb}`);
+    remoteMemoRootsDb = new PouchDB(`${nameMemoRootsDb}`);
 }
-				     
+				   
+function initPage() {
+    langs();
+    connectOfflineToRemote();
+}
+				   
+var connection;
+function connectOfflineToRemote() {
+  if (offline) {
+      sync();
+      alert('Synced');
+      connect();
+      connection = remoteDatabase.changes({
+	  since: 'now',
+	  live: true
+      })
+	  .on('change', connect)
+	  .on('complete', function(info) { console.log('cancel:'+info); })
+	  .on('error', function(err) { console.log('changes error:'+err); });
+      connection.cancel();
+  } else {
+      connect();
+  }
+}
+				   
+function connect() {
+    remoteDatabase.info().then(function (info) {
+	console.log(info);
+    });
+    remoteDatabase.allDocs({
+	include_docs: true,
+	attachments: true
+    }).then(handleRows).catch(err => console.log(err));
+    groupRoots = {};
+}
+
+function sync() {
+    var syncDom = document.getElementById('sync-wrapper');
+    syncDom.setAttribute('data-sync-state', 'syncing');
+    var opts = {live: true};
+    remoteDatabase.replicate.to(uriDatabases + nameDatabase, opts, syncError);
+    remoteDatabase.replicate.from(uriDatabases + nameDatabase, opts, syncError);
+    remoteKeywordsDb.replicate.to(uriDatabases + nameKeywordsDb, opts, syncError);
+    remoteKeywordsDb.replicate.from(uriDatabases + nameKeywordsDb, opts, syncError);
+    remoteMemoRootsDb.replicate.to(uriDatabases + nameMemoRootsDb, opts, syncError);
+    remoteMemoRootsDb.replicate.from(uriDatabases + nameMemoRootsDb, opts, syncError);
+}
+
+  // There was some form or error syncing
+  function syncError() {
+    var syncDom = document.getElementById('sync-wrapper');
+    syncDom.setAttribute('data-sync-state', 'error');
+  }
+				   
 function handleRows(results) {
     let groupsAndRoots = defineGroupsFromRoots(results.rows);
     let groups = groupsAndRoots.groups;
     //
     groupRoots = groupsAndRoots.groupRoots;       
     fillRootGroupsSelect(groups);
-    const map = mapRoots(results.rows);
-    fillAllRootsSelect(map);
-    fillAllFirstRootsSelect(map);
+    const maps = mapRoots(results.rows);
+    map = maps[0];
+    fillAllRootsSelect(maps[1]);
+    fillAllFirstRootsSelect(maps[1]);
 }
 				      
 function mapRoots(roots) {
     let map = new Map();
+    let ids = {};
     roots.forEach(function(root) {
-	let pageStart = 10000 + parseInt(root.doc.pageStart);
-	while (map.get(pageStart)) {
-	    pageStart += 0.01;
+	let id = root.doc._id.trim();
+	if (ids[id] == null) {
+	    let pageStart = 10000 + parseInt(root.doc.pageStart);
+	    while (map.get(pageStart)) {
+		pageStart += 0.01;
+	    }
+            map.set(pageStart, id);
+	    ids[id] = 1;
+	    if (pageStart < 10030.0) {
+		// console.log(id + "\n" + root.doc);
+	    }
 	}
-	let id = root.doc._id;
-        map.set(pageStart, id);
     });
     let mapAsc = new Map([...map.entries()].sort());
-    return mapAsc;
+    return [map, mapAsc];
 }
 				      
 function defineGroupsFromRoots(roots) {
@@ -85,9 +158,15 @@ function fillRootGroupsSelect(groups) {
 function fillAllRootsSelect(map) {
     let select = document.getElementById("allroots");
     select.options[0] = new Option("", "");
+    var last = "";
     for (var [pageStart, id] of map.entries()) {
 	let name = id.length <= 24 ? id : id.substring(0, 24);
-	select.options[select.options.length] = new Option(name, id);
+	if (id !== last) {
+	    select.options[select.options.length] = new Option(name, id);
+	    last = id;
+	} else {
+	    console.log("dupe:" + last);
+	}
     };
 }
 				   
@@ -95,12 +174,15 @@ function fillAllFirstRootsSelect(map) {
     let select = document.getElementById("allfirstroots");
     select.options[0] = new Option("", "");
     let re = /\/([^/]{2,20})[,\/]{1}/u;
+    var last = "";				     
     for (var [pageStart, id] of map.entries()) {
        	let match = id.match(re);
-	if (match != null && match.length > 1) {
-            select.options[select.options.length]
-		= new Option(match[1], id);
-       	}
+	if (match != null && match.length > 1 && id !== last) {
+            select.options[select.options.length] = new Option(match[1], id);
+	    last = id;
+       	} else {
+	    console.log("dupe:" + last);
+	}
     };
 }
 				   
@@ -115,15 +197,6 @@ function listGroupRoots(select) {
     });
 }
 
-/**
- * entry point
- */
-function showUpdate(select, pieroot, roothistory) {
-    const oldValue = pieroot.value;
-    pieroot.value = showRootContent(select, oldValue);
-//    return saveHistory(select, oldValue, roothistory);
-}
-
 function parseContent(root) {
     const content = "<pre>" + parseContents(root, 0) + "</pre>";
     // console.log(root + "\n" + content);
@@ -131,7 +204,7 @@ function parseContent(root) {
 }
 				   
 const languages
-      = [["sk","old indian"],["gk","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven-ill","ven.-ill"],["ahd","ahd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"]];				   
+      = [["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"]];				   
 const langsMap = {};
 languages.forEach(function(lang) {
     langsMap[lang[1]] = lang[0];
@@ -140,7 +213,7 @@ languages.forEach(function(lang) {
 				   
 function langs() {
     const sel = document.getElementById("ielanguage");
-    const selKeys = document.getElementById("keyword-ielanguage");
+    const selKeys = document.getElementById("ielanguageKeyword");
     sel.options.length = selKeys.options.length = 0;
     selKeys.options[0] = new Option("","");
     languages.forEach(function(lang) {
@@ -184,23 +257,47 @@ function parseContents(root, level) {
 var lastSelect;				   
 
 function linkLanguage(lang, link) {
+    linkLanguageBase(lang, link);
+    return saveHistory(lastSelect.options[lastSelect.selectedIndex].text,
+		       lastSelect.value, roothistory);
+}
+				   
+function linkLanguageBase(lang, link) {
     var iekeyword = document.getElementById("iekeyword");
     iekeyword.scrollIntoView(false);
     iekeyword.value = link.innerHTML;
     var ielang = document.getElementById("ielanguage");
     // console.log(ielang.value + "->" + lang);
     ielang.value = lang;
-    return saveHistory(lastSelect.options[lastSelect.selectedIndex].text,
-		       lastSelect.value, roothistory);
+}
+				   
+/**
+ * no history save
+ */
+function linkKeywordLanguage(link) {
+    var ielangKey = document.getElementById("ielanguageKeyword");
+    return linkLanguageBase(ielangKey.value, link);
+}
+
+/**
+ * entry point
+ */
+function showUpdate(select, pieroot, roothistory) {
+    const oldValue = pieroot.value;
+    pieroot.value = showRootContent(select, oldValue);
+//    return saveHistory(select, oldValue, roothistory);
 }
 
 /**
  * From any list, pick a Root to show in detail
  */
 function showRootContent(select, oldRoot) {
-    lastSelect = select;
-    let opt = select.options[select.selectedIndex];
-    let rootId = opt.value;
+    let rootId = select;
+    if (select.options) {
+	lastSelect = select;
+	opt = select.options[select.selectedIndex];
+	rootId = opt.value;
+    }
     if (rootId !== "") {
 	// console.log(opt.text + " -> " + opt.value + " = " + rootId);
 	let outParsed = document.getElementById("root-table-scroll");
@@ -230,34 +327,37 @@ function saveKeyword() {
     keywordPut(lang, key, root, note);
 }
 
+const keyClick = "href='javascript:void(0)' onclick='linkKeywordLanguage(this)'";
+const rootClick = "href='javascript:void(0)' onclick='showUpdate(this.innerHTML, pieroot, roothistory)'"; 
+				   
 function showKeywords(select) {
     let scrollView = document.getElementById("keyword-table-scroll");
     let opt = select.options[select.selectedIndex];
     let langId = opt.value;
-    if (langId !== "") {
-	console.log(opt.text + " -> " + opt.value + " = " + langId);
-	// let outParsed = document.getElementById("root-table-scroll");
-	remoteKeywordsDb.query('ielang/ielang-words-root-and-related-meanings'
-			       , { "key":langId }
-			      )
+    if (langId != null) {
+	var opts = {};
+	if (langId !== "") {
+	    opts.key = langId;
+	}
+	remoteKeywordsDb.query('ielang/ielang-words-root-and-related-meanings',
+			       opts)
 	    .then( result => {
-		console.log(result);
+		// console.log(result);
 		var values = "";
 		var vs = [];
 		result.rows.forEach( row => {
-		    var value = "<p id='keyword'>" + row.value[0] + "<br/>";
+		    var word = "<a " + keyClick + ">" + row.value[0] + "</a>";
+		    var value = "<p id='keyword'>" + word + "<br/>";
 		    var info = row.value[1];
 		    var key = "";
 		    Object.keys(info).forEach(k => {
 			key = k;
-			value += key + "<br/>" + Object.keys(info[key]);
+			value += "<a " + rootClick + ">" + k + "</a><br/>" + Object.keys(info[key]);
 		    });
 		    value += "</p><br/>";
 		    vs[vs.length] = [key, value];
 		});
-		vs.sort().forEach( v => {
-		    values += v[1];
-		});
+		vs.sort().forEach( v => values += v[1] );
 		scrollView.innerHTML = values;
 	    });
     }

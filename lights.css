@@ -22,7 +22,7 @@ html, body {
 
 .main p#keyword {
     color: #000;
-    font-size:.9rem;
+    font-size:.8rem;
     padding-right:0px
 }
 
@@ -30,7 +30,7 @@ html, body {
     #height:150px;
     font-size:1rem;
     width:40rem;
-    height:480px;
+    height:450px;
     overflow:scroll;  
     margin-top:2px;
 }
@@ -39,7 +39,7 @@ html, body {
     #height:150px;
     font-size:.8rem;
     width:10rem;
-    height:480px;
+    height:450px;
     overflow:scroll;  
     margin-top:2px;
 }
@@ -151,4 +151,21 @@ input#lightswitch {
    position: absolute;
    top: -9999px;
    left: -9999px;
+}
+
+
+.hidden{
+    display:none;
+}
+
+#sync-error, #sync-success {
+  display: none;
+}
+
+[data-sync-state=syncing] #sync-success {
+  display: block;
+}
+
+[data-sync-state=error] #sync-error {
+  display: block;
 }

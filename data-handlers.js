@@ -272,7 +272,8 @@ function parseLemmas(root, level) {
     var content = "";
     var q = '"';
     const langs = 19;
-    let re = /(\*Root \/ lemma:[^\/]*)(\/[^:]*)([\s][*]?[:])/;
+    // let re = /(\*Root \/ lemma:[^\/]*)(\/[^:]*)([\s][*]?[:])/;
+    let re = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
     var matchs = root.match(re);
     // console.log(matchs);
     if (matchs == null) {
@@ -352,6 +353,7 @@ function showRootContent(select, oldRoot) {
 	    let content = parseContent(result.content);
 	    outParsed.innerHTML = content;
 	}).catch(function(err) {
+	    console.log(rootId + "*");
 	    remoteDatabase.get(rootId + "*").then( function(result) {
 		let content = parseContent(result.content);
 		outParsed.innerHTML = content;

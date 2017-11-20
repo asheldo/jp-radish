@@ -30,9 +30,20 @@ if (!offline) {
 }
 				   
 function initPage() {
+    consoleShow();
     langs();
     connectOfflineToRemote();
 }
+
+function consoleShow() {				   
+  console.error = console.log = (function (old_function, div_log) {
+    return function(text) {
+	old_function(text);
+	div_log.innerHTML += text;
+	// alert(text);
+    }
+  } (console.log.bind(console), document.getElementById("div_log")));
+}	       
 				   
 var connection;
 function connectOfflineToRemote() {
@@ -197,6 +208,9 @@ function listGroupRoots(select) {
     });
 }
 
+const keyClick = "onclick='linkKeywordLanguage(this)' href='javascript:void(0)' ";
+const rootClick = "onclick='showUpdate(this.innerHTML, pieroot, roothistory)' href='javascript:void(0)'"; 
+				       
 function parseContent(root) {
     const content = "<pre>" + parseContents(root, 0) + "</pre>";
     // console.log(root + "\n" + content);
@@ -250,10 +264,43 @@ function parseContents(root, level) {
 	    content += next;
 	}
 	// console.log("" + level + ": " + matchs[1] + " -> " + link);
+	return parseLemmas(content);
+    }
+}
+
+function parseLemmas(root, level) {
+    var content = "";
+    var q = '"';
+    const langs = 19;
+    let re = /(\*Root \/ lemma:[^\/]*)(\/[^:]*)([\s][*]?[:])/;
+    var matchs = root.match(re);
+    // console.log(matchs);
+    if (matchs == null) {
+	return root;
+    } else {
+	// const lang = q + langsMap[matchs[1].replace(".","").toLowerCase()] + q
+	const lemma = matchs[2];
+	const first = matchs.index + matchs[1].length;
+	const second = first + 1 + lemma.length; // 9 lang + 2
+	const link = "<a " + rootClick + ">";
+	content += root.substring(0, first) + "</pre>";
+	content += link + lemma + "</a>" + "<pre>";
+	// recurse a few times
+	const next = root.substring(second);
+	if (level < 4) {
+	    content += parseLemmas(next, level+1);
+	} else {
+	    content += next;
+	}
+	// console.log("" + level + ": " + matchs[1] + " -> " + link);
 	return content;
     }
 }
 
+    
+/**
+ *
+ */
 var lastSelect;				   
 
 function linkLanguage(lang, link) {
@@ -301,9 +348,14 @@ function showRootContent(select, oldRoot) {
     if (rootId !== "") {
 	// console.log(opt.text + " -> " + opt.value + " = " + rootId);
 	let outParsed = document.getElementById("root-table-scroll");
-	let doc = remoteDatabase.get(rootId).then( function(result) {
-	    const content = parseContent(result.content);
+	remoteDatabase.get(rootId).then( function(result) {
+	    let content = parseContent(result.content);
 	    outParsed.innerHTML = content;
+	}).catch(function(err) {
+	    remoteDatabase.get(rootId + "*").then( function(result) {
+		let content = parseContent(result.content);
+		outParsed.innerHTML = content;
+	    })	    
 	});
 	return rootId;
     }
@@ -327,9 +379,6 @@ function saveKeyword() {
     keywordPut(lang, key, root, note);
 }
 
-const keyClick = "href='javascript:void(0)' onclick='linkKeywordLanguage(this)'";
-const rootClick = "href='javascript:void(0)' onclick='showUpdate(this.innerHTML, pieroot, roothistory)'"; 
-				   
 function showKeywords(select) {
     let scrollView = document.getElementById("keyword-table-scroll");
     let opt = select.options[select.selectedIndex];

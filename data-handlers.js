@@ -29,11 +29,11 @@ if (!offline) {
 	connectOfflineToRemote();
     }
 
-   const langRegEx = /(([Aa]lb\.)|([Rr]um\.)|([Rr]uss\.)|([Hh]es\.)|(Old Church Slavic)|(Old Indian)|([Gg]r\.)|(schwed\.)|(ahd\.)|([Ee]ngl\.)|(mengl\.)|(ags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|(mcymr\.)|([Gg]ot\.)|(av\.)|([Aa]vest\.)|(ven\.-ill\.)|([Ll]at\.))\s((?!and)[^\s]*)\.*\s()/;
+   const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|(\b[Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\b[Gg]r\.)|(schwed\.)|(nhd\.)|(ahd\.)|([Ee]ngl\.)|(mengl\.)|(ags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|(mcymr\.)|([Gg]ot\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A)\s((?!and)\/[^/]*\/)/;
 
    const langRegExCount = langRegEx.source.split("|").length;
 				   
-   const languages = [["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"]];
+    const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
     const langsMap = {};    
 				   // console.log(langsMa

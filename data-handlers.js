@@ -1,7 +1,7 @@
 
 const host = "192.168.0.6";
 //  : "localhost";
-const offline = true;
+const offline = true, liveChangesSubscription = false;
 var groupRoots;
 var map;
 
@@ -12,34 +12,30 @@ var uriDatabases = `http://${host}:5984/`;
 var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
 console.log(uriDatabases + nameDatabase);
-
-if (!offline) {
-    remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
-    remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
-    remoteMemoRootsDb = new PouchDB(`http://${host}:5984/pie-memoroots-17102401`);
-} else {
-    remoteDatabase = new PouchDB(`${nameDatabase}`);
-    remoteKeywordsDb = new PouchDB(`${nameKeywordsDb}`);
-    remoteMemoRootsDb = new PouchDB(`${nameMemoRootsDb}`);
-}
+initData();
 
     function initPage() {
-        consoleShow();
+	consoleShow();
 	langs();
 	connectOfflineToRemote();
     }
 
-   const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|(\b[Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\b[Gg]r\.)|(schwed\.)|(nhd\.)|(ahd\.)|([Ee]ngl\.)|(mengl\.)|(ags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|(mcymr\.)|([Gg]ot\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A)\s((?!and)\/[^/]*\/)/;
+const defRegEx = /(\s)(`[\w\s,]*')/;
+// const seriesGreekRegEx = /\s([^,\s]*)([,\s]*)/;
+// const serieslangRegEx = /\s([^,\s]*)([,\s]*)/;
+const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
+const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
 
-   const langRegExCount = langRegEx.source.split("|").length;
+const langRegExCount = langRegEx.source.split("|").length;
 				   
-    const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
+const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
-    const langsMap = {};    
+const langsMap = {};    
 				   // console.log(langsMa
-    const keyClick = "onclick='linkKeywordLanguage(this)' href='javascript:void(0)' ";
-    const rootClick = "onclick='showUpdate(this.innerHTML, pieroot, roothistory)' href='javascript:void(0)'"; 				       
-    const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;				   
+const keyClick = "onclick='linkKeywordLanguage(this)' href='javascript:void(0)' ";
+const rootClick = "onclick='showUpdate(this.innerHTML, pieroot, roothistory)' href='javascript:void(0)'"; 				       
+const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
+
     function langs() {
 	const sel = document.getElementById("ielanguage");
 	const selKeys = document.getElementById("ielanguageKeyword");
@@ -73,7 +69,7 @@ if (!offline) {
     function connectOfflineToRemote() {
 	// if (offline) {
 	sync();
-	alert('Synced');
+	// alert('Synced');
 	connect();
 	// No live changes for now
 
@@ -257,38 +253,44 @@ if (!offline) {
 	});
     }
 
-    
+    /**
+     * Parse word and lemma links
+     */
     function parseContent(root) {
-	const content = "<pre>" + parseContents(root, 0) + "</pre>";
+	var contents = parseContents(false, root, 0);
+	contents = parseContents(true, contents, 0);
+	const content = "<pre>" + contents + "</pre>";
 	// console.log(root + "\n" + content);
 	return content;
     }
 
-    function parseContents(root, level) {
+    function parseContents(doGreek, root, level) {
 	var content = "";
 	var q = '"';
-	var matchs = root.match(langRegEx);
+	var matchs = root.match(doGreek?greekRegEx:langRegEx);
 	// console.log(matchs);
 	if (matchs == null) {
 	    return root;
 	} else {
-	    const lang = q + langsMap[matchs[1].replace(".","").toLowerCase()] + q
-	    const word = matchs[langRegExCount + 2];
+	    const lang = langsMap[matchs[1].replace(".","").toLowerCase()];
+	    const langQ = q + lang + q;
+	    const word = matchs[(doGreek?1:langRegExCount) + 2];
+	    const sep = matchs[(doGreek?1:langRegExCount) + 3];
 	    const first = matchs.index + 1 + matchs[1].length;
-	    const second = first + 1 + word.length; // 9 lang + 2
+	    const second = first + word.length + sep.length; // 9 lang + 2
 	    content += root.substring(0, first) + "</pre>";
-	    const link = "<a href='javascript:void(0)' onclick='linkLanguage("+lang+",this)'>";
+	    const link = "<a href='javascript:void(0)' onclick='linkLanguage("+langQ+",this)'>";
 	    // console.log(link);
-	    content += link + word + "</a>" + "<pre>";
+	    content += link + word + "</a>" + sep + "<pre>";
 	    // recurse a few times
 	    const next = root.substring(second);
 	    if (level < 128) {
-		content += parseContents(next, level+1);
+		content += parseContents(doGreek, next, level+1);
 	    } else {
 		content += next;
 	    }
 	    // console.log("" + level + ": " + matchs[1] + " -> " + link);
-	    return parseLemmas(content, 0);
+	    return doGreek ? content : parseLemmas(content, 0);
 	}
     }
 
@@ -545,5 +547,21 @@ if (!offline) {
 	    }
 	}
     }
+
+/**
+ * messes with emacs tabs, so at end of file
+ */
+function initData() {
+    if (!offline) {
+	remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
+        remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
+        remoteMemoRootsDb = new PouchDB(`http://${host}:5984/pie-memoroots-17102401`);
+    } else {
+        remoteDatabase = new PouchDB(`${nameDatabase}`);
+        remoteKeywordsDb = new PouchDB(`${nameKeywordsDb}`);
+	remoteMemoRootsDb = new PouchDB(`${nameMemoRootsDb}`);
+    }
+}
+
 
 /** END **/

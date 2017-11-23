@@ -20,13 +20,15 @@ initData();
 	connectOfflineToRemote();
     }
 
-const defRegEx = /(\s)(`[\w\s,]*')/;
+const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
+// const defRegEx = /(`[\w\s,]*')/;
+const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
 // const seriesGreekRegEx = /\s([^,\s]*)([,\s]*)/;
 // const serieslangRegEx = /\s([^,\s]*)([,\s]*)/;
 const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
-const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
-
+const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|(\b[Aa]rm\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
 const langRegExCount = langRegEx.source.split("|").length;
+const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 				   
 const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
@@ -34,7 +36,15 @@ const langsMap = {};
 				   // console.log(langsMa
 const keyClick = "onclick='linkKeywordLanguage(this)' href='javascript:void(0)' ";
 const rootClick = "onclick='showUpdate(this.innerHTML, pieroot, roothistory)' href='javascript:void(0)'"; 				       
+const definitionClick = "onclick='linkKeywordDefinition(this)' href='javascript:void(0)' ";
+
+// short versions
 const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
+var lastSelect;				   
+
+    /**
+     * and setup forms
+     */
 
     function langs() {
 	const sel = document.getElementById("ielanguage");
@@ -253,12 +263,14 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 	});
     }
 
-    /**
+    /****************************
      * Parse word and lemma links
      */
+
     function parseContent(root) {
 	var contents = parseContents(false, root, 0);
 	contents = parseContents(true, contents, 0);
+	contents = parseDefinitions(contents, 0);
 	const content = "<pre>" + contents + "</pre>";
 	// console.log(root + "\n" + content);
 	return content;
@@ -284,7 +296,7 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 	    content += link + word + "</a>" + sep + "<pre>";
 	    // recurse a few times
 	    const next = root.substring(second);
-	    if (level < 128) {
+	    if (level < maxWords) {
 		content += parseContents(doGreek, next, level+1);
 	    } else {
 		content += next;
@@ -297,10 +309,7 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
     function parseLemmas(root, level) {
 	var content = "";
 	var q = '"';
-	const langs = 19;
-	// let re = /(\*Root \/ lemma:[^\/]*)(\/[^:]*)([\s][*]?[:])/;
-	let re = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
-	var matchs = root.match(re);
+	var matchs = root.match(lemmaRegEx);
 	// console.log(matchs);
 	if (matchs == null) {
 	    return root;
@@ -314,7 +323,7 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 	    content += link + lemma + "</a>" + "<pre>";
 	    // recurse a few times
 	    const next = root.substring(second);
-	    if (level < 4) {
+	    if (level < maxLemmas) {
 		content += parseLemmas(next, level+1);
 	    } else {
 		content += next;
@@ -324,12 +333,33 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 	}
     }
 
+
+    function parseDefinitions(root, level) {
+	var content = "";
+	var q = '"';
+	var matchs = root.match(defRegEx);
+	// console.log(matchs);
+	if (matchs == null) {
+	    return root;
+	} else {
+	    const definition = matchs[1].replace("\n", "\n ");
+	    const link = "<a " + definitionClick + ">";
+	    content += root.substring(0, matchs.index);
+	    content += link + definition + "</a>";
+	    // recurse a few times
+	    const next = root.substring(matchs.index + matchs[1].length);
+	    if (level < maxDefinitions) {
+		content += parseDefinitions(next, level+1);
+	    } else {
+		content += next;
+	    }
+	    return content;
+	}
+    }
     
     /**
-     *
+     * and the link handlers parsed above
      */
-    var lastSelect;				   
-
     function linkLanguage(lang, link) {
 	linkLanguageBase(lang, link);
 	return saveHistory(lastSelect.options[lastSelect.selectedIndex].text,
@@ -353,9 +383,19 @@ const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 	return linkLanguageBase(ielangKey.value, link);
     }
 
+    function linkKeywordDefinition(link) {
+	var note = document.getElementById("note");
+	note.scrollIntoView(false);
+	let value = link.innerHTML;
+	if (value.substring(0, 1) === "`") 
+	    value = value.substring(1, value.length-1);
+	note.value = value;
+    }
+
     /**
-     * entry point
+     * handlers for root/lemma change
      */
+
     function showUpdate(select, pieroot, roothistory) {
 	const oldValue = pieroot.value;
 	pieroot.value = showRootContent(select, oldValue);

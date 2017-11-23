@@ -162,7 +162,7 @@ input#lightswitch {
   display: none;
 }
 
-[data-sync-state=syncing] #sync-success {
+[data-sync-state=syncing-data] #sync-success {
   display: block;
 }
 

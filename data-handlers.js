@@ -23,6 +23,7 @@ initData();
 const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 // const defRegEx = /(`[\w\s,]*')/;
 const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
+const meaningRegEx = /(English meaning:\* )([^\n]*)/;
 // const seriesGreekRegEx = /\s([^,\s]*)([,\s]*)/;
 // const serieslangRegEx = /\s([^,\s]*)([,\s]*)/;
 const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
@@ -119,15 +120,15 @@ var lastSelect;
 
     function sync() {
 	var syncDom = document.getElementById('sync-wrapper');
-	syncDom.setAttribute('data-sync-state', 'syncing');
+	syncDom.setAttribute('data-sync-state', 'syncing.');
 	to(remoteKeywordsDb,   nameKeywordsDb);
 	from(remoteKeywordsDb, nameKeywordsDb);
 	to(remoteMemoRootsDb,  nameMemoRootsDb);
 	from(remoteMemoRootsDb,  nameMemoRootsDb);
-	syncDom.innerHTML = 'syncing roots data';
+	syncDom.innerHTML = 'syncing roots data..';
 	to(remoteDatabase, nameDatabase);
 	from(remoteDatabase, nameDatabase);
-	syncDom.innerHTML = 'sync done - building';
+	syncDom.innerHTML = 'sync done - building...';
     }
 
 
@@ -152,7 +153,7 @@ var lastSelect;
 	map = maps[0];
 	fillAllRootsSelect(maps[1]);
 	fillAllFirstRootsSelect(maps[1]);
-	syncDom.innerHTML = 'ready';
+	syncDom.innerHTML = 'ready!';
     }
     
     function mapRoots(roots) {
@@ -270,7 +271,8 @@ var lastSelect;
     function parseContent(root) {
 	var contents = parseContents(false, root, 0);
 	contents = parseContents(true, contents, 0);
-	contents = parseDefinitions(contents, 0);
+	contents = parseDefinitions(contents, 0, defRegEx, maxDefinitions, 1);
+	contents = parseDefinitions(contents, 0, meaningRegEx, 1, 2);
 	const content = "<pre>" + contents + "</pre>";
 	// console.log(root + "\n" + content);
 	return content;
@@ -333,23 +335,27 @@ var lastSelect;
 	}
     }
 
-
-    function parseDefinitions(root, level) {
+    /*
+     */
+    function parseDefinitions(root, level, regEx, maxDef, text) {
 	var content = "";
 	var q = '"';
-	var matchs = root.match(defRegEx);
+	var matchs = root.match(regEx);
 	// console.log(matchs);
 	if (matchs == null) {
 	    return root;
 	} else {
-	    const definition = matchs[1].replace("\n", "\n ");
+	    const definition = matchs[text].replace("\n", "\n ");
 	    const link = "<a " + definitionClick + ">";
-	    content += root.substring(0, matchs.index);
+	    let skip = 0;
+	    for (var i=1; i<text; ++i)
+		skip += matchs[i].length;
+	    content += root.substring(0, matchs.index + skip);
 	    content += link + definition + "</a>";
 	    // recurse a few times
-	    const next = root.substring(matchs.index + matchs[1].length);
-	    if (level < maxDefinitions) {
-		content += parseDefinitions(next, level+1);
+	    const next = root.substring(matchs.index + skip + matchs[text].length);
+	    if (++level < maxDef) {
+		content += parseDefinitions(next, level, regEx, maxDef, text);
 	    } else {
 		content += next;
 	    }

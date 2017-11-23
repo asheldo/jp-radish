@@ -23,10 +23,16 @@
       <input type="checkbox" id="lightswitch" />
 
     <div class="main">
-    <table>
-      <tr>
-	<!-- left -->
-	<td>
+      <table>
+	<tr><td colspan=2 align=center>
+	    <span id="sync-wrapper">
+          <div id="sync-success">Currently syncing</div>
+          <div id="sync-error">There was a problem syncing</div>
+	</span>!</td>
+	</tr>
+	<tr>
+	  <!-- left -->
+	  <td>
 	  <table>
 	    <!-- top -->
 	    <tr>
@@ -73,16 +79,16 @@
 	</td>
       </tr>
       <!-- bottom -->
-      <tr>
-	<td colspan=2 valign="top">
+	<tr>
+	  <td colspan=2 valign="top">
 	  <table>
 	    <tr>
 	      <td class="cell-memo">
 		<div>
 	  <form>
 	  <select id="ielanguage"/>
-	  <input id="iekeyword" size="10" value="keyword" /><br/>
-	  pie: <input id="pieroot" size="15"/><br/>
+	  <input id="iekeyword" size="12" value="keyword" /><br/>
+	  pie: <input id="pieroot" size="18"/><br/>
 	  <input id="note" size="25" placeholder="note"><br/>
 	  <button id="save" onclick="saveKeyword(); return false;">save</button>	  </form>
 		</div>
@@ -99,8 +105,10 @@
 		      </td>
 		      <td class="cell-memo">
 	  <form>
-	  <input id="session" value="session" onchange="loadMemoRoots();"/></br>
-	  <button id="memo" onclick="saveMemoRoots(); return false;"> memo </button>
+	    <input id="session" size="24" value="session"
+		   onchange="loadMemoRoots();"/></br>
+	    <button id="memo"
+		    onclick="saveMemoRoots(); return false;"> memo </button>
 	  <script>
 	    var session = "" + new Date().toISOString() + "-session";
 	    document.getElementById("session").value = session;
@@ -114,29 +122,23 @@
 	      <td class="cell-memo">
 	      </td>
 	      <td class="cell-memo">
-        <div id="sync-wrapper">
-          <div id="sync-success">Currently syncing</div>
-          <div id="sync-error">There was a problem syncing</div>
-	</div>
 	      </td>
 	      <td colspan=1 class="cell-memo">
-		<textarea rows=6 id="div_log">Log:</textarea>
+		<textarea rows=10 id="div_log">Log:</textarea>
 	      </td>
 	    </tr>
 	  </table>	  
-	</td>
-	<td colspan=1 class="cell-memo">
+	  </td>
 	  <!-- bottom right -->
-
-	</td>
-      </tr>
+	</tr>
+	<tr>
+	  <td colspan=2><div><hr></div></td>
+	</tr>
     </table>
     </div>
     
-    <div>
+    <div class="main">
     </div>
-    
-    
 
   </body>
   

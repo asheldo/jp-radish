@@ -2,8 +2,7 @@
 const host = "192.168.0.6";
 //  : "localhost";
 const offline = true, liveChangesSubscription = false;
-var groupRoots;
-var map;
+var groupRoots = {};
 
 var nameDatabase = 'pokory-17102401',
     nameKeywordsDb = 'pie-keys-17102401',
@@ -30,7 +29,9 @@ const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
 const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|(\b[Aa]rm\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
 const langRegExCount = langRegEx.source.split("|").length;
 const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
-				   
+
+const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
+
 const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
 const langsMap = {};    
@@ -77,6 +78,7 @@ var lastSelect;
     }	       
     
     var connection;
+
     function connectOfflineToRemote() {
 	// if (offline) {
 	sync();
@@ -105,7 +107,6 @@ var lastSelect;
 	    include_docs: true,
 	    attachments: true
 	}).then(handleRows).catch(err => console.log(err));
-	groupRoots = {};
     }
 
     function to(db, dbName) {
@@ -144,15 +145,15 @@ var lastSelect;
 				   
     function handleRows(results) {
 	var syncDom = document.getElementById('sync-wrapper');
-	let groupsAndRoots = defineGroupsFromRoots(results.rows);
-	let groups = groupsAndRoots.groups;
+	const mapAsc = mapRoots(results.rows);
+	fillAllRootsSelect(mapAsc);
+	fillAllFirstRootsSelect(mapAsc);
 	//
+	let groupsAndRoots = defineGroupsFromRoots(mapAsc);
+	let groups = groupsAndRoots.groups;
 	groupRoots = groupsAndRoots.groupRoots;       
 	fillRootGroupsSelect(groups);
-	const maps = mapRoots(results.rows);
-	map = maps[0];
-	fillAllRootsSelect(maps[1]);
-	fillAllFirstRootsSelect(maps[1]);
+
 	syncDom.innerHTML = 'ready!';
     }
     
@@ -174,36 +175,30 @@ var lastSelect;
 	    }
 	});
 	let mapAsc = new Map([...map.entries()].sort());
-	return [map, mapAsc];
+	return mapAsc;
     }
     
-    function defineGroupsFromRoots(roots) {
+    function defineGroupsFromRoots(mapAsc) {
 	let groups = [];
 	let groupRoots = {}
-	roots.forEach( root => {
-	    let doc = root.doc;
-	    let id = doc._id;
-	    let re = /\/([*]{0,1}..)/u;
-	    if (id == null) {
-		console.log("no match");
-	    } else {
-		let matchs = id.match(re);
-		if (matchs == null) {
-		    // groups[groups.length] = {};
-		} else if (matchs.length > 1) {
-		    if (matchs[1] !== groups[groups.length - 1]) {
-			groups[groups.length] = matchs[1];
-			groupRoots[matchs[1]] = [ id ];
-		    } else {
-			let r = groupRoots[matchs[1]];
-			r[r.length] = id;      
-		    }
+	Array.from(mapAsc.values()).forEach( id => {
+	    let matchs = id.match(idGroupRegEx);
+	    if (matchs == null) {
+		// groups[groups.length] = {};
+	    } else if (matchs.length > 1) {
+		const first = matchs[1];
+		if (groupRoots[first] == null) {
+		    groups[groups.length] = first;
+		    groupRoots[first] = [ id ];
+		} else {
+		    let r = groupRoots[first];
+		    r[r.length] = id;      
 		}
-		// else {        console.log("empty"); // groups[""] = {};       }
 	    }
 	});
-	let groupsAndRoots = {};
-	groupsAndRoots.groups = groups.sort();
+	const groupsAndRoots = {};
+	console.log(groups);
+	groupsAndRoots.groups = groups;
 	groupsAndRoots.groupRoots = groupRoots;
 	return groupsAndRoots;
     }
@@ -569,9 +564,15 @@ var lastSelect;
 	    console.log(err);
 	    // if (err.error === "conflict")
 	    remoteMemoRootsDb.get(session).then(function (doc) {
-		memo._rev = doc._rev;
-		console.log(memo);
-		return remoteMemoRootsDb.put(memo);
+		if (history.length < doc.roots.length) {
+		    // console.log(doc.roots);
+		    alert("Not persisting, count difference");
+		} else {
+		    memo._rev = doc._rev;
+		    // console.log(memo);
+		    // return
+		    remoteMemoRootsDb.put(memo);
+		}
 	    }).catch(function (err) {
 		console.log("262: " + err);
 	    });

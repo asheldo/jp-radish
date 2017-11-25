@@ -26,13 +26,13 @@ const meaningRegEx = /(English meaning:\* )([^\n]*)/;
 // const seriesGreekRegEx = /\s([^,\s]*)([,\s]*)/;
 // const serieslangRegEx = /\s([^,\s]*)([,\s]*)/;
 const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
-const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|(\b[Aa]rm\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|([Ss]lav\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
+const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|([Ss]lav\.)|(čech\.)|([Ss]lov\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|(\b[Aa]rm\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
 const langRegExCount = langRegEx.source.split("|").length;
 const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 
 const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
 
-const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
+const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["čech","čech"],["slov","slov"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
 const langsMap = {};    
 				   // console.log(langsMa
@@ -83,9 +83,9 @@ var lastSelect;
 	// if (offline) {
 	sync();
 	// alert('Synced');
-	connect();
+	// connect();
 	// No live changes for now
-
+	/*
 	connection = remoteDatabase.changes({
 	    since: 'now',
 	    live: true
@@ -96,7 +96,7 @@ var lastSelect;
 	if (!liveChangesSubscription) {
 	    connection.cancel();
 	}
-	//	    connect();
+	*/
     }
     
     function connect() {
@@ -111,27 +111,61 @@ var lastSelect;
 
     function to(db, dbName) {
 	var opts = {live: true};
-	db.replicate.to(uriDatabases + dbName, opts, syncError);
+	return db.replicate.to(uriDatabases + dbName);
     }
     
     function from(db, dbName) {
 	var opts = {live: true};
-	db.replicate.from(uriDatabases + dbName, opts, syncError);
+	return db.replicate.from(uriDatabases + dbName);
     }
 
     function sync() {
-	var syncDom = document.getElementById('sync-wrapper');
-	syncDom.setAttribute('data-sync-state', 'syncing.');
-	to(remoteKeywordsDb,   nameKeywordsDb);
-	from(remoteKeywordsDb, nameKeywordsDb);
-	to(remoteMemoRootsDb,  nameMemoRootsDb);
-	from(remoteMemoRootsDb,  nameMemoRootsDb);
-	syncDom.innerHTML = 'syncing roots data..';
-	to(remoteDatabase, nameDatabase);
-	from(remoteDatabase, nameDatabase);
-	syncDom.innerHTML = 'sync done - building...';
+	const syncDom = document.getElementById('sync-wrapper');
+	syncDom.setAttribute('data-sync-state', 'syncing-data');
+	return to(remoteKeywordsDb,   nameKeywordsDb)
+	    .then(sync2)
+	    .catch(sync2);
     }
 
+    function sync2(info) {
+	return from(remoteKeywordsDb, nameKeywordsDb)
+	    .then( sync3)
+	    .catch( sync3);
+    }
+
+    function sync3(info) {
+	const langKey = document.getElementById('ielanguageKeyword');
+	langKey.enabled = true; // setAttribute('enabled', 'true');
+	return to(remoteMemoRootsDb,  nameMemoRootsDb)
+	    .then(sync4)
+	    .catch(sync4);
+    }
+
+    function sync4(info) {
+	return from(remoteMemoRootsDb,  nameMemoRootsDb)
+	    .then( syncRoots)
+	    .catch( syncRoots);
+    }
+	
+    function syncRoots(info) {
+	const syncDom = document.getElementById('sync-wrapper');
+	syncDom.innerHTML = 'syncing roots data..';	
+	return to(remoteDatabase, nameDatabase)
+	    .then( syncRoots2)
+	    .catch( syncRoots2);
+    }
+
+    function syncRoots2(info) {
+	const syncDom = document.getElementById('sync-wrapper');
+	return from(remoteDatabase, nameDatabase)
+	    .then((info) => {
+		connect();
+		syncDom.innerHTML = 'sync done - building...';
+	    })
+	    .catch((err) => {
+		syncDom.innerHTML = 'sync done - failed!';
+	    });
+    }
 
     // Show replication error state
     function syncError() {
@@ -154,7 +188,7 @@ var lastSelect;
 	groupRoots = groupsAndRoots.groupRoots;       
 	fillRootGroupsSelect(groups);
 
-	syncDom.innerHTML = 'ready!';
+	syncDom.innerHTML = 'pokorny-radish ready!';
     }
     
     function mapRoots(roots) {
@@ -420,11 +454,14 @@ var lastSelect;
 		let content = parseContent(result.content);
 		outParsed.innerHTML = content;
 	    }).catch(function(err) {
-		console.log(rootId + "*");
+		console.log(rootId);
+		console.log(err);
 		remoteDatabase.get(rootId + "*").then( function(result) {
 		    let content = parseContent(result.content);
 		    outParsed.innerHTML = content;
-		})	    
+		}).catch(function(err) {		    
+		    console.log("Get failed");
+		});
 	    });
 	    return rootId;
 	}
@@ -435,6 +472,36 @@ var lastSelect;
     /**
      * Add keyword to keys db
      */				   
+    function showKeywords(select) {
+	let scrollView = document.getElementById("keyword-table-scroll");
+	let opt = select.options[select.selectedIndex];
+	let langId = opt.value;
+	if (langId != null) {
+	    var opts = {};
+	    if (langId !== "")
+		opts.key = langId;
+	    remoteKeywordsDb.query('ielang/ielang-words-root-and-related-meanings', opts)
+		.then( result => {
+		    var values = "";
+		    var vs = [];
+		    result.rows.forEach( row => {
+			var word = "<a " + keyClick + ">" + row.value[0] + "</a>";
+			var value = "<p id='keyword'>" + word + "<br/>";
+			var info = row.value[1];
+			var key = "";
+			Object.keys(info).forEach(k => {
+			    key = k;
+			    value += "<a "+rootClick+">"+k+"</a><br/>"+Object.keys(info[key]);
+			});
+			value += "</p><br/>";
+			vs[vs.length] = [key, value];
+		    });
+		    vs.sort().forEach( v => values += v[1] );
+		    scrollView.innerHTML = values;
+		});
+	}
+    }
+    
     function saveKeyword() {
 	let langEl = document.getElementById("ielanguage");
 	let lang = langEl.options[langEl.selectedIndex].text;
@@ -448,39 +515,6 @@ var lastSelect;
 	keywordPut(lang, key, root, note);
     }
 
-    function showKeywords(select) {
-	let scrollView = document.getElementById("keyword-table-scroll");
-	let opt = select.options[select.selectedIndex];
-	let langId = opt.value;
-	if (langId != null) {
-	    var opts = {};
-	    if (langId !== "") {
-		opts.key = langId;
-	    }
-	    remoteKeywordsDb.query('ielang/ielang-words-root-and-related-meanings',
-				   opts)
-		.then( result => {
-		    // console.log(result);
-		    var values = "";
-		    var vs = [];
-		    result.rows.forEach( row => {
-			var word = "<a " + keyClick + ">" + row.value[0] + "</a>";
-			var value = "<p id='keyword'>" + word + "<br/>";
-			var info = row.value[1];
-			var key = "";
-			Object.keys(info).forEach(k => {
-			    key = k;
-			    value += "<a " + rootClick + ">" + k + "</a><br/>" + Object.keys(info[key]);
-			});
-			value += "</p><br/>";
-			vs[vs.length] = [key, value];
-		    });
-		    vs.sort().forEach( v => values += v[1] );
-		    scrollView.innerHTML = values;
-		});
-	}
-    }
-    
     function keywordExist(key) {
 	return remoteKeywordsDb.get(key).then(function () {
             return Promise.resolve(true);

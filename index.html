@@ -28,7 +28,7 @@
 	  <td colspan=2 align=center>
 	    <div id="sync-wrapper">
               <span id="sync-success">Currently syncing</span>
-              <span id="sync-error">There was a problem syncing</span>!
+              <span id="sync-error">There was a problem syncing</span>
 	    </div>
 	  </td>
 	</tr>
@@ -50,7 +50,7 @@
 	      </td>
 	      <td colspan=1>
 		<div>
-		  <select id="ielanguageKeyword"
+		  <select id="ielanguageKeyword" enabled="false"
 			  onchange="showKeywords(this)"/>
 		</div>
 	      </td>
@@ -107,7 +107,7 @@
 		      </td>
 		      <td class="cell-memo">
 	  <form>
-	    <input id="session" size="24" value="session"
+	    <input id="session" size="27" value="session"
 		   onchange="loadMemoRoots();"/></br>
 	    <button id="memo"
 		    onclick="saveMemoRoots(); return false;"> memo </button>

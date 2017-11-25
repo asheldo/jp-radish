@@ -1,10 +1,10 @@
 
 const host = "192.168.0.6";
 //  : "localhost";
-const offline = true, liveChangesSubscription = false;
+const liveChangesSubscription = false;
 var groupRoots = {};
 
-var nameDatabase = 'pokory-17102401',
+var nameDatabase = 'pokorny-17112501',
     nameKeywordsDb = 'pie-keys-17102401',
     nameMemoRootsDb = 'pie-memoroots-17102401';
 var uriDatabases = `http://${host}:5984/`;
@@ -15,7 +15,7 @@ initData();
 
     function initPage() {
 	consoleShow();
-	langs();
+	// langs(); -> during sync
 	connectOfflineToRemote();
     }
 
@@ -80,10 +80,7 @@ var lastSelect;
     var connection;
 
     function connectOfflineToRemote() {
-	// if (offline) {
-	sync();
-	// alert('Synced');
-	// connect();
+	syncAndConnect();
 	// No live changes for now
 	/*
 	connection = remoteDatabase.changes({
@@ -119,7 +116,7 @@ var lastSelect;
 	return db.replicate.from(uriDatabases + dbName);
     }
 
-    function sync() {
+    function syncAndConnect() {
 	const syncDom = document.getElementById('sync-wrapper');
 	syncDom.setAttribute('data-sync-state', 'syncing-data');
 	return to(remoteKeywordsDb,   nameKeywordsDb)
@@ -128,12 +125,15 @@ var lastSelect;
     }
 
     function sync2(info) {
+	console.log("2:" + info);
 	return from(remoteKeywordsDb, nameKeywordsDb)
 	    .then( sync3)
 	    .catch( sync3);
     }
 
     function sync3(info) {
+	console.log("3:" + info);
+	langs();
 	const langKey = document.getElementById('ielanguageKeyword');
 	langKey.enabled = true; // setAttribute('enabled', 'true');
 	return to(remoteMemoRootsDb,  nameMemoRootsDb)
@@ -142,12 +142,14 @@ var lastSelect;
     }
 
     function sync4(info) {
+	console.log("4:" + info);
 	return from(remoteMemoRootsDb,  nameMemoRootsDb)
 	    .then( syncRoots)
 	    .catch( syncRoots);
     }
 	
     function syncRoots(info) {
+	console.log("5:" + info);
 	const syncDom = document.getElementById('sync-wrapper');
 	syncDom.innerHTML = 'syncing roots data..';	
 	return to(remoteDatabase, nameDatabase)
@@ -156,6 +158,7 @@ var lastSelect;
     }
 
     function syncRoots2(info) {
+	console.log("6:" + info);
 	const syncDom = document.getElementById('sync-wrapper');
 	return from(remoteDatabase, nameDatabase)
 	    .then((info) => {
@@ -633,15 +636,9 @@ var lastSelect;
  * messes with emacs tabs, so at end of file
  */
 function initData() {
-    if (!offline) {
-	remoteDatabase = new PouchDB(`http://${host}:5984/pokory-17102401`);
-        remoteKeywordsDb = new PouchDB(`http://${host}:5984/pie-keys-17102401`);
-        remoteMemoRootsDb = new PouchDB(`http://${host}:5984/pie-memoroots-17102401`);
-    } else {
-        remoteDatabase = new PouchDB(`${nameDatabase}`);
-        remoteKeywordsDb = new PouchDB(`${nameKeywordsDb}`);
-	remoteMemoRootsDb = new PouchDB(`${nameMemoRootsDb}`);
-    }
+    remoteDatabase = new PouchDB(`${nameDatabase}`);
+    remoteKeywordsDb = new PouchDB(`${nameKeywordsDb}`);
+    remoteMemoRootsDb = new PouchDB(`${nameMemoRootsDb}`);    
 }
 
 

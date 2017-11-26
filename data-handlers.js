@@ -11,28 +11,45 @@ var uriDatabases = `http://${host}:5984/`;
 var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
 const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
-// const defRegEx = /(`[\w\s,]*')/;
+
 const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
 const meaningRegEx = /(English meaning:\* )([^\n]*)/;
-// const seriesGreekRegEx = /\s([^,\s]*)([,\s]*)/;
-// const serieslangRegEx = /\s([^,\s]*)([,\s]*)/;
-const greekRegEx = /((\b[Gg]r\.))\s([^,\s]*)([,\s]*)/;
+
+const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
+const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
+// short versions
+const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
+
+const greekRegEx = /((\b[Gg]r\.)|([Mm]aked\.)|([Pp]hryg\.))\s([^,\s]*)([,\s]*)/;
+const greekRegExCount = greekRegEx.source.split("|").length;
 const langRegEx = /((\b[Hh]itt\.)|(\b[Ll]it\.)|(\b[Aa]lb\.)|(\b[Rr]um\.)|([Ll]ett\.)|([Rr]uss\.)|([Ss]lav\.)|(čech\.)|([Ss]lov\.)|(\b[Hh]es\.)|(Old Church Slavic)|(Old Indian)|(\baisl\.)|(schwed\.)|(nhd\.)|(mhd\.)|(ahd\.)|([Gg]ot\.)|(\bas\.)|(\b[Ee]ngl\.)|(mengl\.)|(\bags\.)|([Gg]erm\.)|(air\.)|(mir\.)|(\b[Aa]rm\.)|([Ii]llyr\.)|([Cc]ymr\.)|([Mm]cymr\.)|(\bav\.)|([Aa]vest\.)|(ven\.-ill\.)|(\b[Ll]at\.)|(\b[Tt]och\. B)|(\b[Tt]och\. A))\s(\/[^\/]*\/)([,\s]*)/;
 const langRegExCount = langRegEx.source.split("|").length;
-const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 
-const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
-
-const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["čech","čech"],["slov","slov"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["as","as"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
-
+const languages = [["hitt","hitt"],
+		   ["old indian","old indian"],
+		   ["gr","gr"],["maked","maked"],["phryg","phryg"],
+		   ["av","av"],["av","avest"],
+		   ["lat","lat"],
+		   ["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["čech","čech"],["slov","slov"],
+		   ["lit","lit"],
+		   ["alb","alb"],
+		   ["got","got"],["germ","germ"],["as","as"],["ags","ags"],["aisl","aisl"],
+		   ["schwed","schwed"],
+		   ["ahd","ahd"],["nhd","nhd"],
+		   ["mengl","mengl"],["engl","engl"],
+		   ["cymr","cymr"],["air","air"],["mir","mir"],
+		   ["illyr","illyr"],["ven.-ill","ven.-ill"],
+		   ["arm","arm"],
+		   ["hes","hes"],
+		   ["toch","toch"]];
 const langsMap = {};    
 				   // console.log(langsMa
 const keyClick = "onclick='linkKeywordLanguage(this)' href='javascript:void(0)' ";
 const rootClick = "onclick='showUpdate(this.innerHTML, pieroot, roothistory)' href='javascript:void(0)'"; 				       
 const definitionClick = "onclick='linkKeywordDefinition(this)' href='javascript:void(0)' ";
+// TODO
+const externalLinks = [["Abkurzungsverzeichnis", "http://wwwg.uni-klu.ac.at/eeo/AbkuerzungsverzeichnisSprachen.pdf"]];
 
-// short versions
-const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 var lastSelect;				   
 
 /*
@@ -332,8 +349,8 @@ function initPage() {
 	} else {
 	    const lang = langsMap[matchs[1].replace(".","").toLowerCase()];
 	    const langQ = q + lang + q;
-	    const word = matchs[(doGreek?1:langRegExCount) + 2];
-	    const sep = matchs[(doGreek?1:langRegExCount) + 3];
+	    const word = matchs[(doGreek?greekRegExCount:langRegExCount) + 2];
+	    const sep = matchs[(doGreek?greekRegExCount:langRegExCount) + 3];
 	    const first = matchs.index + 1 + matchs[1].length;
 	    const second = first + word.length + sep.length; // 9 lang + 2
 	    content += root.substring(0, first) + "</pre>";

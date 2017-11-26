@@ -10,15 +10,6 @@ var nameDatabase = 'pokorny-17112501',
 var uriDatabases = `http://${host}:5984/`;
 var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
-console.log(uriDatabases + nameDatabase);
-initData();
-
-    function initPage() {
-	consoleShow();
-	// langs(); -> during sync
-	connectOfflineToRemote();
-    }
-
 const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 // const defRegEx = /(`[\w\s,]*')/;
 const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
@@ -32,7 +23,7 @@ const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 
 const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
 
-const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["čech","čech"],["slov","slov"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
+const languages = [["hitt","hitt"],["lit","lit"],["alb","alb"],["russ","russ"],["old church slavic","old church slavic"],["slav","slav"],["čech","čech"],["slov","slov"],["old indian","old indian"],["gr","gr"],["schwed","schwed"],["lat","lat"],["got","got"],["germ","germ"],["as","as"],["ags","ags"],["aisl","aisl"],["av","av"],["av","avest"],["illyr","illyr"],["ven.-ill","ven.-ill"],["ahd","ahd"],["nhd","nhd"],["mengl","mengl"],["engl","engl"],["cymr","cymr"],["air","air"],["mir","mir"],["arm","arm"],["hes","hes"],["toch","toch"]];
 
 const langsMap = {};    
 				   // console.log(langsMa
@@ -44,10 +35,24 @@ const definitionClick = "onclick='linkKeywordDefinition(this)' href='javascript:
 const firstRootRegEx = /\/([^/]{2,20})[,\/]{1}/;
 var lastSelect;				   
 
-    /**
-     * and setup forms
-     */
+/*
+ * db setup first
+ */
+console.log(uriDatabases + nameDatabase);
+initData();
 
+/**
+ * call on load
+ */
+function initPage() {
+    consoleShow();
+    // langs(); -> during sync
+    connectOfflineToRemote();
+}
+
+    /**
+     * basic forms stuff
+     */
     function langs() {
 	const sel = document.getElementById("ielanguage");
 	const selKeys = document.getElementById("ielanguageKeyword");
@@ -77,11 +82,10 @@ var lastSelect;
 	} (console.log.bind(console), document.getElementById("div_log")));
     }	       
     
-    var connection;
-
+    // var connection;
     function connectOfflineToRemote() {
 	syncAndConnect();
-	// No live changes for now
+	// No live changes sync'ing for now, needs precise timing etc.
 	/*
 	connection = remoteDatabase.changes({
 	    since: 'now',
@@ -95,15 +99,21 @@ var lastSelect;
 	}
 	*/
     }
-    
+
+    /**
+     * after sync, failure or success
+     */
     function connect() {
-	remoteDatabase.info().then(function (info) {
-	    console.log(info);
-	});
+	remoteDatabase.info()
+	    .then(function (info) {
+		console.log(info);
+	    });
 	remoteDatabase.allDocs({
 	    include_docs: true,
 	    attachments: true
-	}).then(handleRows).catch(err => console.log(err));
+	})
+	    .then(handleRows)
+	    .catch(err => console.log(err));
     }
 
     function to(db, dbName) {
@@ -127,8 +137,9 @@ var lastSelect;
     function sync2(info) {
 	console.log("2:" + info);
 	return from(remoteKeywordsDb, nameKeywordsDb)
-	    .then( sync3)
-	    .catch( sync3);
+	    .then(sync3)
+	    // Fast-forward, to connect, if failing
+	    .catch(syncRoots2);
     }
 
     function sync3(info) {
@@ -162,11 +173,12 @@ var lastSelect;
 	const syncDom = document.getElementById('sync-wrapper');
 	return from(remoteDatabase, nameDatabase)
 	    .then((info) => {
-		connect();
 		syncDom.innerHTML = 'sync done - building...';
+		connect();
 	    })
 	    .catch((err) => {
 		syncDom.innerHTML = 'sync done - failed!';
+		connect();
 	    });
     }
 

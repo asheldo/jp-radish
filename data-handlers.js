@@ -14,6 +14,7 @@ const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 
 const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
 const meaningRegEx = /(English meaning:\* )([^\n]*)/;
+const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)\s/;
 
 const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
@@ -330,16 +331,18 @@ function initPage() {
      */
 
     function parseContent(root) {
-	var contents = parseContents(false, root, 0);
-	contents = parseContents(true, contents, 0);
+	var contents = parseContentsAndLemmas(false, root, 0);
+	contents = parseContentsAndLemmas(true, contents, 0);
 	contents = parseDefinitions(contents, 0, defRegEx, maxDefinitions, 1);
 	contents = parseDefinitions(contents, 0, meaningRegEx, 1, 2);
+	contents = parseLinks(contents, 0, hrefRegEx, maxDefinitions,
+			      0);
 	const content = "<pre>" + contents + "</pre>";
 	// console.log(root + "\n" + content);
 	return content;
     }
 
-    function parseContents(doGreek, root, level) {
+    function parseContentsAndLemmas(doGreek, root, level) {
 	var content = "";
 	var q = '"';
 	var matchs = root.match(doGreek?greekRegEx:langRegEx);
@@ -360,7 +363,7 @@ function initPage() {
 	    // recurse a few times
 	    const next = root.substring(second);
 	    if (level < maxWords) {
-		content += parseContents(doGreek, next, level+1);
+		content += parseContentsAndLemmas(doGreek, next, level+1);
 	    } else {
 		content += next;
 	    }
@@ -396,9 +399,18 @@ function initPage() {
 	}
     }
 
-    /*
+    /**
+     *
      */
+    function parseLinks(root, level, regEx, maxDef, text) {
+        return parseDefinitionsAndLinks(root, level, regEx, maxDef, text, null);
+    }
+
     function parseDefinitions(root, level, regEx, maxDef, text) {
+        return parseDefinitionsAndLinks(root, level, regEx, maxDef, text, definitionClick);
+    }
+
+    function parseDefinitionsAndLinks(root, level, regEx, maxDef, text, href) {
 	var content = "";
 	var q = '"';
 	var matchs = root.match(regEx);
@@ -406,17 +418,22 @@ function initPage() {
 	if (matchs == null) {
 	    return root;
 	} else {
-	    const definition = matchs[text].replace("\n", "\n ");
-	    const link = "<a " + definitionClick + ">";
 	    let skip = 0;
 	    for (var i=1; i<text; ++i)
 		skip += matchs[i].length;
 	    content += root.substring(0, matchs.index + skip);
-	    content += link + definition + "</a>";
+	    const def = matchs[text].replace("\n", "\n ");
+	    const link = "<a " + (href==null
+				  ? "href='"+def+"' target=" + level
+				  : href) + ">";
+	    content += link + def + "</a>";
+	    if (href==null) {
+		console.log(content);
+	    }
 	    // recurse a few times
 	    const next = root.substring(matchs.index + skip + matchs[text].length);
 	    if (++level < maxDef) {
-		content += parseDefinitions(next, level, regEx, maxDef, text);
+		content += parseDefinitionsAndLinks(next, level, regEx, maxDef, text, href);
 	    } else {
 		content += next;
 	    }

@@ -9,11 +9,17 @@
       <link rel="stylesheet" media="screen" href="lights.css"/>
       <link href='https://fonts.googleapis.com/css?family=Lato:400,900,400italic,700italic' rel='stylesheet'>
 
-    <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>
-    <script src="data-handlers.js"/>
+      <!-- Optional CSS -->
+      <link rel="stylesheet" href="/vendor/jquery-typeahead/dist/jquery.typeahead.min.css">
+      <!-- Required JavaScript -->
+      <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+      <script src="jquery.typeahead.min.js"></script>      
+      <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>   
+      <script src="pouchdb.quick-search.min.js"></script>
+      <script src="data-handlers.js"/>
 
-    <script>
-    </script>
+      <script>
+      </script>
     
   </head>
   
@@ -39,17 +45,25 @@
 	    <!-- top -->
 	    <tr>
 	      <td colspan=1>
-		<div>
-    <select id="groups" name="groups"
-	    onChange="listGroupRoots(this)" >
-    </select>
-    <select id="docs" name="docs"
-	    onChange="showUpdate(this, pieroot, roothistory)" >
-    </select>
-		</div>
+		<table style="width:100%;">
+		  <td><div>
+		      <select id="groups" name="groups"
+			      onChange="listGroupRoots(this)">
+		      </select><br/>
+		      <select id="docs" name="docs"
+			      onChange="showUpdate(this, pieroot, roothistory)">
+		      </select>
+		  </div></td>
+		  <td style="horizontal-align:center;">
+		  </td>
+		</table>
 	      </td>
 	      <td colspan=1>
 		<div>
+		  <select id="ieKeywordFilter"
+			  onchange="setKeywordFilter(ielanguageKeyword">
+		    <option value="ielanguage">lang. filter</option>
+		  </select><br/>
 		  <select id="ielanguageKeyword" enabled="false"
 			  onchange="showKeywords(this)"/>
 		</div>
@@ -102,18 +116,32 @@
 		  <table>
 		    <tr>
 		      <td class="cell-memo">
-	  <select id="roothistory" size="8" width="100%"
-		  onChange="pieroot.value=showRootContent(this, pieroot.value)" />
+			<select id="roothistory" size="8" width="100%"
+				onChange="pieroot.value=showRootContent(this, pieroot.value)" />
 		      </td>
 		      <td class="cell-memo">
 	  <form>
-	    <input id="session" size="27" value="session"
+<!--	    <input id="session" size="27" value="session"
 		   onchange="loadMemoRoots();"/></br>
+		 onchange="alert(this.value); loadMemoRoots(this)"
+-->
+    <div class="typeahead__container">
+      <div class="typeahead__field" id="typeahead__field"
+	   > 
+        <span class="typeahead__query">
+          <input class="js-typeahead-session_v1" name="session_v1[query]"
+		 placeholder="Search" autocomplete="off" type="search"
+		 onchange="sessionSelection.value=this.value;">
+        </span>
+      </div>
+    </div>
+    
 	    <button id="memo"
 		    onclick="saveMemoRoots(); return false;"> memo </button>
+	    <input type="hidden" id="sessionSelection"/>	    
 	  <script>
 	    var session = "" + new Date().toISOString() + "-session";
-	    document.getElementById("session").value = session;
+	    document.getElementById("sessionSelection").value = session;
 	  </script>
 	  </form>
 		      </td>
@@ -123,10 +151,13 @@
 	      </td>
 	      <td class="cell-memo">
 	      </td>
-	      <td class="cell-memo">
+	      <td class="cell-memo"><div>
+		<button id="sync"
+			onclick="window.location.href='.';">sync</button>
+		</div>
 	      </td>
 	      <td colspan=1 class="cell-memo">
-		<textarea rows=10 id="div_log">Log:</textarea>
+		<textarea width="10" rows=10 id="div_log">Log:</textarea>
 	      </td>
 	    </tr>
 	  </table>	  

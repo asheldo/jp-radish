@@ -3,7 +3,7 @@ const host = "192.168.0.6";
 //  : "localhost";
 const liveChangesSubscription = false;
 var groupRoots = {};
-
+var unsavedSession = false;
 var nameDatabase = 'pokorny-17112501',
     nameKeywordsDb = 'pie-keys-17102401',
     nameMemoRootsDb = 'pie-memoroots-17102401';
@@ -14,7 +14,7 @@ const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 
 const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
 const meaningRegEx = /(English meaning:\* )([^\n]*)/;
-const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)\s/;
+const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)[\s\.\,\)]/;
 
 const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
 const idGroupRegEx = /\/([*]{0,1}[(]{0,1}[^(]{0,1}[)]{0,1}[^)]{0,1})/u;
@@ -66,6 +66,8 @@ function initPage() {
     consoleShow();
     // langs(); -> during sync
     connectOfflineToRemote();
+    // temp home:
+    // sessionsSuggest();
 }
 
     /**
@@ -173,8 +175,11 @@ function initPage() {
     function sync4(info) {
 	console.log("4:" + info);
 	return from(remoteMemoRootsDb,  nameMemoRootsDb)
-	    .then( syncRoots)
-	    .catch( syncRoots);
+	    .then((infoRoots) => {
+		setSessions();
+		syncRoots(infoRoots);
+	    })
+	    .catch(syncRoots);
     }
 	
     function syncRoots(info) {
@@ -205,6 +210,61 @@ function initPage() {
 	var syncDom = document.getElementById('sync-wrapper');
 	syncDom.setAttribute('data-sync-state', 'error');
     }
+
+    /**
+     *
+     */
+    var sessions = [];
+
+    function sessionsSuggest() {
+	var sessionEl = document.getElementById("sessionSelection");
+	// const sessions = ["2017-11-27T00:35:56.228Z-session"];
+	$.typeahead({
+	    input: '.js-typeahead-session_v1',
+	    order: "desc",
+	    source: {
+		data: sessions
+	    },
+	    callback: {
+		onInit: function (node) {
+		    console.log('Typeahead Initiated on ' + node.selector);
+		},
+		onClickAfter: function (node, a, item, event) {
+		    event.preventDefault();
+		    sessionEl.value = item.display;
+		    loadMemoRoots(sessionEl);
+		}
+	    }
+	});
+    }
+
+    function setSessions() {
+	remoteMemoRootsDb.allDocs({
+	    include_docs: false,
+	    attachments: false
+	})
+	    .then((results) => {
+		sessions = [];
+		results.rows.forEach((row) => {
+		    sessions[sessions.length] = row.id;
+		});
+		console.log(sessions);
+		// temp home:
+		sessionsSuggest();
+	    });
+    }
+	/*	 pouch.search({
+	     query: 'mario',
+	     fields: ['title', 'text'],
+	     include_docs: true,
+	     highlighting: true
+	 })
+	    .then(function (res) {
+		console.log(res.rows[0].doc.text); // "It's-a me, Mario!" 
+		console.log(res.rows[0].highlighting); // {"text": "It's-a me, <strong>Mario</strong>!"} 
+	    });
+*/
+
 
     /**
      * Build pie roots select(s)
@@ -602,8 +662,9 @@ function initPage() {
     /**
      * Retrieve if saved this session before
      */
-    function loadMemoRoots() {
-	const session = document.getElementById("session").value;
+    function loadMemoRoots(el) {
+	// const session = document.getElementById("session").value;
+	const session = el.value;
 	if (session === "") {
 	    return;
 	}
@@ -611,7 +672,8 @@ function initPage() {
 	remoteMemoRootsDb.get(session).then( session => {
 	    if (session == null || session.type !== "lang:word:roots") {
 		alert("Not updating with nothing");
-	    } else if (history.length > session.roots.length) {
+	    } else if (unsavedSession
+		       && history.length > session.roots.length) {
 		console.log(session.roots);
 		alert("Not updating, count difference");
 	    } else {
@@ -629,7 +691,10 @@ function initPage() {
     }
     
     function saveMemoRoots() {
-	const session = document.getElementById("session").value;
+	unsavedSession = false;
+	// const session = document.getElementById("session").value;
+	var sessionEl = document.getElementById('sessionSelection');
+	const session = sessionEl.value;
 	if (session === "") {
 	    history.length = 0;
 	}
@@ -674,6 +739,7 @@ function initPage() {
 	    if (len==0 || hopts[len-1].text!==text) {
 		hopts[len] = new Option(text, value);
 		// console.log(hopts[len].value);
+		unsavedSession = true;
 	    }
 	}
     }

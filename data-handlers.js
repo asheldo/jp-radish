@@ -12,7 +12,8 @@ var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
 const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 
-const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
+const defRegEx = /[^*] ((`[^<\.`]*')|(phonetic mutation))/;
+const germanRegEx = /(German meaning:\* )(`.*')/;
 const meaningRegEx = /(English meaning:\* )([^\n]*)/;
 const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)[\s\.\,\)]/;
 
@@ -158,7 +159,7 @@ function initPage() {
 	console.log("2:" + info);
 	return from(remoteKeywordsDb, nameKeywordsDb)
 	    .then(sync3)
-	    // Fast-forward, to connect, if failing
+	    // Fast-forward, to setSessions()/connect(), if remote inaccessible
 	    .catch(syncRoots2);
     }
 
@@ -175,10 +176,7 @@ function initPage() {
     function sync4(info) {
 	console.log("4:" + info);
 	return from(remoteMemoRootsDb,  nameMemoRootsDb)
-	    .then((infoRoots) => {
-		setSessions();
-		syncRoots(infoRoots);
-	    })
+	    .then(syncRoots)
 	    .catch(syncRoots);
     }
 	
@@ -193,6 +191,7 @@ function initPage() {
 
     function syncRoots2(info) {
 	console.log("6:" + info);
+	setSessions(); // setup typeahead
 	const syncDom = document.getElementById('sync-wrapper');
 	return from(remoteDatabase, nameDatabase)
 	    .then((info) => {
@@ -393,6 +392,7 @@ function initPage() {
     function parseContent(root) {
 	var contents = parseContentsAndLemmas(false, root, 0);
 	contents = parseContentsAndLemmas(true, contents, 0);
+	contents = parseGermanMeaning(contents, 0, germanRegEx);
 	contents = parseDefinitions(contents, 0, defRegEx, maxDefinitions, 1);
 	contents = parseDefinitions(contents, 0, meaningRegEx, 1, 2);
 	contents = parseLinks(contents, 0, hrefRegEx, maxDefinitions,
@@ -434,7 +434,6 @@ function initPage() {
 
     function parseLemmas(root, level) {
 	var content = "";
-	var q = '"';
 	var matchs = root.match(lemmaRegEx);
 	// console.log(matchs);
 	if (matchs == null) {
@@ -466,13 +465,18 @@ function initPage() {
         return parseDefinitionsAndLinks(root, level, regEx, maxDef, text, null);
     }
 
+    function parseGermanMeaning(root, level, regEx) {
+	var langQ = '"germ"';
+	const link = " href='javascript:void(0)' onclick='linkLanguage("+langQ+",this)'";
+        return parseDefinitionsAndLinks(root, level, regEx, 1, 2, link);
+    }
+
     function parseDefinitions(root, level, regEx, maxDef, text) {
         return parseDefinitionsAndLinks(root, level, regEx, maxDef, text, definitionClick);
     }
 
     function parseDefinitionsAndLinks(root, level, regEx, maxDef, text, href) {
 	var content = "";
-	var q = '"';
 	var matchs = root.match(regEx);
 	// console.log(matchs);
 	if (matchs == null) {
@@ -513,7 +517,7 @@ function initPage() {
     function linkLanguageBase(lang, link) {
 	var iekeyword = document.getElementById("iekeyword");
 	iekeyword.scrollIntoView(false);
-	iekeyword.value = link.innerHTML;
+	iekeyword.value = link.innerHTML.replace("`","").replace("'");
 	var ielang = document.getElementById("ielanguage");
 	// console.log(ielang.value + "->" + lang);
 	ielang.value = lang;

@@ -12,7 +12,7 @@ var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
 const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
 
-const defRegEx = /[^*] ((`[^<\.`]*')|(phonetic mutation))/;
+const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
 const germanRegEx = /(German meaning:\* )(`.*')/;
 const meaningRegEx = /(English meaning:\* )([^\n]*)/;
 const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)[\s\.\,\)]/;
@@ -75,6 +75,8 @@ function initPage() {
      * basic forms stuff
      */
     function langs() {
+	const langKey = document.getElementById('ielanguageKeyword');
+	langKey.enabled = true; // setAttribute('enabled', 'true');
 	const sel = document.getElementById("ielanguage");
 	const selKeys = document.getElementById("ielanguageKeyword");
 	sel.options.length = selKeys.options.length = 0;
@@ -166,8 +168,6 @@ function initPage() {
     function sync3(info) {
 	console.log("3:" + info);
 	langs();
-	const langKey = document.getElementById('ielanguageKeyword');
-	langKey.enabled = true; // setAttribute('enabled', 'true');
 	return to(remoteMemoRootsDb,  nameMemoRootsDb)
 	    .then(sync4)
 	    .catch(sync4);
@@ -192,6 +192,7 @@ function initPage() {
     function syncRoots2(info) {
 	console.log("6:" + info);
 	setSessions(); // setup typeahead
+	langs();
 	const syncDom = document.getElementById('sync-wrapper');
 	return from(remoteDatabase, nameDatabase)
 	    .then((info) => {
@@ -199,7 +200,7 @@ function initPage() {
 		connect();
 	    })
 	    .catch((err) => {
-		syncDom.innerHTML = 'sync done - failed!';
+		syncDom.innerHTML = 'sync failed - building...';
 		connect();
 	    });
     }

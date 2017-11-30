@@ -10,11 +10,11 @@ var nameDatabase = 'pokorny-17112501',
 var uriDatabases = `http://${host}:5984/`;
 var remoteDatabase, remoteKeywordsDb, remoteMemoRootsDb;
 
-const maxWords = 96, maxLemmas = 8, maxDefinitions = 96;
+const maxWords = 128, maxLemmas = 8, maxDefinitions = 128;
 
-const defRegEx = /((`[^<\.`]*')|(phonetic mutation))/;
-const germanRegEx = /(German meaning:\* )(`.*')/;
-const meaningRegEx = /(English meaning:\* )([^\n]*)/;
+const defRegEx = /((\s`[^<\.`]*')|(phonetic mutation))/;
+const germanRegEx = /(German meaning:\*)( `.*')/;
+const meaningRegEx = /(English meaning:\*)( [^\n]*)/;
 const hrefRegEx = /(\bhttp[s]?:\/\/[^\s]*\b)[\s\.\,\)]/;
 
 const lemmaRegEx = /(\*Root \/ lemma:[^\/]*)(\/[^`']*)(\s:\*\s`)/;
@@ -391,11 +391,12 @@ function initPage() {
      */
 
     function parseContent(root) {
-	var contents = parseContentsAndLemmas(false, root, 0);
-	contents = parseContentsAndLemmas(true, contents, 0);
+	var contents = root;
 	contents = parseGermanMeaning(contents, 0, germanRegEx);
-	contents = parseDefinitions(contents, 0, defRegEx, maxDefinitions, 1);
 	contents = parseDefinitions(contents, 0, meaningRegEx, 1, 2);
+	contents = parseDefinitions(contents, 0, defRegEx, maxDefinitions, 1);
+	contents = parseContentsAndLemmas(false, contents, 0);
+	contents = parseContentsAndLemmas(true, contents, 0);
 	contents = parseLinks(contents, 0, hrefRegEx, maxDefinitions,
 			      0);
 	const content = "<pre>" + contents + "</pre>";
@@ -486,14 +487,16 @@ function initPage() {
 	    let skip = 0;
 	    for (var i=1; i<text; ++i)
 		skip += matchs[i].length;
-	    content += root.substring(0, matchs.index + skip);
-	    const def = matchs[text].replace("\n", "\n ");
+	    content += root.substring(0, matchs.index + skip + 1);
+	    const def = matchs[text].substring(1).replace("\n", "\n ");
 	    const link = "<a " + (href==null
 				  ? "href='"+def+"' target=" + level
 				  : href) + ">";
 	    content += link + def + "</a>";
 	    if (href==null) {
-		console.log(content);
+		// console.log("url");
+	    } else {
+		// console.log(link);
 	    }
 	    // recurse a few times
 	    const next = root.substring(matchs.index + skip + matchs[text].length);

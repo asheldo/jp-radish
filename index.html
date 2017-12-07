@@ -6,6 +6,8 @@
       <meta name="xxxcsrf-param" content="xxxauthenticity_token" />
       <meta name="xxxcsrf-token" content="8==" />
 
+      <title>pokorny's iew</title>
+
       <link rel="stylesheet" media="screen" href="lights.css"/>
       <link href='https://fonts.googleapis.com/css?family=Lato:400,900,400italic,700italic' rel='stylesheet'>
 
@@ -16,15 +18,12 @@
       <script src="jquery.typeahead.min.js"></script>      
       <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>   
       <script src="pouchdb.quick-search.min.js"></script>
-      <script src="data-handlers.js"/>
 
-      <script>
-      </script>
-    
+      <script src="data-handlers.js"></script>
   </head>
   
   <body onload="initPage();">
-
+    
       <label for="lightswitch">Light Switch</label>
       <input type="checkbox" id="lightswitch" />
 
@@ -138,6 +137,8 @@
     
 	    <button id="memo"
 		    onclick="saveMemoRoots(); return false;"> memo </button>
+	    <button id="memo-clear"
+		    onclick="saveMemoRoots(); roothistory.options.length=0; return false;">clear</button>
 	    <input type="text" id="sessionSelection"/>	    
 	  <script>
 	    var session = "" + new Date().toISOString() + "-session";

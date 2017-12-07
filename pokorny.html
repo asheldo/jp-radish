@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta name='viewport' content='width=device-width, initial-scale=1'>
+      <meta name="xxxcsrf-param" content="xxxauthenticity_token" />
+      <meta name="xxxcsrf-token" content="8==" />
+
+      <link rel="stylesheet" media="screen" href="lights.css"/>
+      <link href='https://fonts.googleapis.com/css?family=Lato:400,900,400italic,700italic' rel='stylesheet'>
+
+      <!-- Optional CSS -->
+      <link rel="stylesheet" href="/vendor/jquery-typeahead/dist/jquery.typeahead.min.css">
+      <!-- Required JavaScript -->
+      <script src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+      <script src="jquery.typeahead.min.js"></script>      
+      <script src="https://cdn.jsdelivr.net/pouchdb/5.4.5/pouchdb.min.js"></script>   
+      <script src="pouchdb.quick-search.min.js"></script>
+
+      <script nomodule src="data-handlers.js"></script>
+      
+      <script type="module">
+	import {initPage} from './js/core.js';
+	alert('Modules are pretty cool.');
+      </script>
+    
+      <script type="module">
+	import {initPage} from './js/links.js';
+	alert('Modules are overrated.');
+      </script>
+    
+  </head>
+  
+  <body onload="initPage();">
+
+      <label for="lightswitch">Light Switch</label>
+      <input type="checkbox" id="lightswitch" />
+
+    <div class="main">
+      <table>
+	<tr>
+	  <td colspan=2 align=center>
+	    <div id="sync-wrapper">
+              <span id="sync-success">Currently syncing</span>
+              <span id="sync-error">There was a problem syncing</span>
+	    </div>
+	  </td>
+	</tr>
+	<tr>
+	  <!-- left -->
+	  <td>
+	  <table>
+	    <!-- top -->
+	    <tr>
+	      <td colspan=1>
+		<table style="width:100%;">
+		  <td><div>
+		      <select id="groups" name="groups"
+			      onChange="listGroupRoots(this)">
+		      </select><br/>
+		      <select id="docs" name="docs"
+			      onChange="showUpdate(this, pieroot, roothistory)">
+		      </select>
+		  </div></td>
+		  <td style="horizontal-align:center;">
+		  </td>
+		</table>
+	      </td>
+	      <td colspan=1>
+		<div>
+		  <select id="ieKeywordFilter"
+			  onchange="setKeywordFilter(ielanguageKeyword">
+		    <option value="ielanguage">lang. filter</option>
+		  </select><br/>
+		  <select id="ielanguageKeyword" enabled="false"
+			  onchange="showKeywords(this)"/>
+		</div>
+	      </td>
+	    </tr>
+	    <!-- bottom -->
+	    <tr>
+	      <td colspan=1>
+		<div id="root-table-scroll">Root</div>
+	      </td>
+	      <td colspan=1>
+		<div id="keyword-table-scroll">Keyword</div>
+	      </td>
+	    </tr>
+	  </table>
+	</td>
+	<!-- right -->
+	<td>
+	  <div>
+    <select id="allfirstroots" name="allfirstroots" size=15
+	    onChange="showUpdate(this, pieroot, roothistory)" >
+    </select>
+	  </div>
+	  <div>
+	  <select id="allroots" name="allroots" size=15
+	    onChange="showUpdate(this, pieroot, roothistory)" >
+	  </select>
+	  </div>
+	</td>
+      </tr>
+      <!-- bottom -->
+	<tr>
+	  <td colspan=2 valign="top">
+	  <table>
+	    <tr>
+	      <td class="cell-memo">
+		<div>
+	  <form>
+	  <select id="ielanguage"/>
+	  <input id="iekeyword" size="12" value="keyword" /><br/>
+	  pie: <input id="pieroot" size="18"/><br/>
+	  <input id="note" size="25" placeholder="note"><br/>
+	  <button id="save" onclick="saveKeyword(); return false;">save</button>	  </form>
+		</div>
+	      </td>
+	      <td class="cell-memo">
+	      </td>
+	      <td class="cell-memo">
+		<div>
+		  <table>
+		    <tr>
+		      <td class="cell-memo">
+			<select id="roothistory" size="8" width="100%"
+				onChange="pieroot.value=showRootContent(this, pieroot.value)" />
+		      </td>
+		      <td class="cell-memo">
+	  <form>
+<!--	    <input id="session" size="27" value="session"
+		   onchange="loadMemoRoots();"/></br>
+		 onchange="alert(this.value); loadMemoRoots(this)"
+-->
+    <div class="typeahead__container">
+      <div class="typeahead__field" id="typeahead__field"
+	   > 
+        <span class="typeahead__query">
+          <input class="js-typeahead-session_v1" name="session_v1[query]"
+		 placeholder="Search" autocomplete="off" type="search"
+		 onchange="sessionSelection.value=this.value;">
+        </span>
+      </div>
+    </div>
+    
+	    <button id="memo"
+		    onclick="saveMemoRoots(); return false;"> memo </button>
+	    <button id="memo-clear"
+		    onclick="saveMemoRoots(); roothistory.options.length=0; return false;">clear</button>
+	    <input type="text" id="sessionSelection"/>	    
+	  <script>
+	    var session = "" + new Date().toISOString() + "-session";
+	    document.getElementById("sessionSelection").value = session;
+	  </script>
+	  </form>
+		      </td>
+		    </tr>
+		  </table>		 
+		</div>
+	      </td>
+	      <td class="cell-memo">
+	      </td>
+	      <td class="cell-memo"><div>
+		<button id="sync"
+			onclick="window.location.href='.';">sync</button>
+		</div>
+	      </td>
+	      <td colspan=1 class="cell-memo">
+		<textarea width="10" rows=10 id="div_log">Log:</textarea>
+	      </td>
+	    </tr>
+	  </table>	  
+	  </td>
+	  <!-- bottom right -->
+	</tr>
+	<tr>
+	  <td colspan=2><div><hr></div></td>
+	</tr>
+    </table>
+    </div>
+    
+    <div class="main">
+    </div>
+
+  </body>
+  
+</html>
